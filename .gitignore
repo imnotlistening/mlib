@@ -1,0 +1,21 @@
+*.[oad]
+*.so
+*~
+*.png
+
+# Some binaries and files we generate.
+libmyrt.so*
+myrt
+lexxer.c
+bin/*
+
+# Autoconf files
+Makefile.in
+depcomp
+install-sh
+missing
+configure
+autom4te.cache
+Makefile
+config.log
+config.status

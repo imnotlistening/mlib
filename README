@@ -1,0 +1,26 @@
+
+				MLib README
+				-----------
+
+
+0  Table of Contents
+
+  1.   Intro
+  2.   Building
+
+
+1.  Intro
+
+
+2.  Building
+
+2.1  Building from git source
+
+    If you are building from the git sources, then you will need to build the
+autoconf scripts. Since MLib needs shared libraries, the process involves
+libtool:
+
+    $ cd mlib.git/
+    $ libtoolize
+    $ autoreconf
+    $ ./configure # etc, etc
