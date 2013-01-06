@@ -22,5 +22,5 @@ libtool:
 
     $ cd mlib.git/
     $ libtoolize
-    $ autoreconf
+    $ autoreconf --install
     $ ./configure # etc, etc

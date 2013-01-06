@@ -19,3 +19,5 @@ autom4te.cache
 Makefile
 config.log
 config.status
+ltmain.sh
+m4/
