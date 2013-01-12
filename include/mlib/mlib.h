@@ -17,3 +17,56 @@
  * Definitions and what not for MLib. 
  */
 
+#ifndef _MLIB_H_
+#define _MLIB_H_
+
+#include <stdlib.h>
+
+#include <mlib/list.h>
+#include <mlib/library.h>
+
+/*
+ * Describe a command so that we can later execute it.
+ */
+struct mlib_command {
+	const char		*name;
+	const char		*desc;
+
+	/*
+	 * Main entrance function for the command.
+	 */
+	int			(*main)(int argc, char *argv[]);
+
+	struct list_head	 list;
+};
+
+/*
+ * This is for queueing output to the console.
+ */
+struct mlib_msg {
+	struct list_head	 queue;
+	char			*text;
+};
+
+/*
+ * Core functionality.
+ */
+int	 mlib_init();
+
+/*
+ * Command related functions.
+ */
+int	 mlib_register_command(struct mlib_command *command);
+struct mlib_command	*mlib_find_command(const char *name);
+int	 mlib_register_builtins();
+
+/*
+ * Print macros and functions. This aims to keep I/O to the console nice and
+ * coordinated.
+ */
+int	 mlib_printf(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2)));
+int	 mlib_lib_printf(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2)));
+
+#endif

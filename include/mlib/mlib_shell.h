@@ -14,42 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with mlib.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Core program for MLib. Loads modules and parses user input.
- *
- * TODO: write a description of the MLib architecture.
+ * This is for the MLib shell program.
  */
 
+#ifndef _MLIB_SHELL_H_
+#define _MLIB_SHELL_H_
+
 #include <mlib/mlib.h>
-#include <mlib/mlib_shell.h>
 
-int mlib_parse_options(int argc, char *argv[]);
-int mlib_loop();
+#ifndef MLIB_PROMPT
+#  define MLIB_PROMPT "mlib> "
+#endif
 
-extern int yylex();
+#define MLIB_LEX_DONE		0
+#define MLIB_LEX_STRING		1
+#define MLIB_LEX_EOL		2
+#define MLIB_LEX_ERROR		-1
 
-int main(int argc, char *argv[])
-{
-	/*
-	 * Parse MLib's options.
-	 */
-	mlib_parse_options(argc, argv);
+/*
+ * Terminal and I/O functions.
+ */
+int	 mlib_init_io();
+size_t	 mlib_readbuf(char *buffer, size_t max);
+int	 mlib_read_line(int *argc, char ***argv);
+int	 mlib_push_stream(const char *stream);
 
-	/*
-	 * Init functions.
-	 */
-	mlib_init();
-	mlib_init_io();
+extern char *mlib_text;
 
-	/*
-	 * And run the main loop.
-	 */
-	mlib_push_stream(NULL);
-	mlib_loop();
-
-	return 0;
-}
-
-int mlib_parse_options(int argc, char *argv[])
-{
-	return 0;
-}
+#endif

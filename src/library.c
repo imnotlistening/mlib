@@ -18,6 +18,10 @@
  * memory mapped from disk into our virtual address space.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 
+#include <sys/mman.h>
 
 #include <mlib/mlib.h>
+

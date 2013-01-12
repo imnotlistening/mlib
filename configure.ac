@@ -5,14 +5,25 @@
 AC_INIT([MLib], [0.0], [imNotListening@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_PROG_CC
+AC_PROG_INSTALL
+AM_PROG_LEX
 
 AC_CONFIG_HEADERS([config.h])
+
+AC_CHECK_HEADERS([sys/mman.h readline/readline.h readline/history.h])
+
+# Gonna need these.
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UINT32_T
 
 # Check for libcurl.
 LIBCURL_CHECK_CONFIG()
+
+# Standard libraries we need.
+AC_CHECK_LIB(pthread, pthread_create)
 
 # Gonna build some shared libraries.
 AC_CONFIG_MACRO_DIR([m4])

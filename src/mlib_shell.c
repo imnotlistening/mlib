@@ -14,42 +14,50 @@
  * You should have received a copy of the GNU General Public License
  * along with mlib.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Core program for MLib. Loads modules and parses user input.
- *
- * TODO: write a description of the MLib architecture.
+ * The MLib shell.
  */
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <mlib/mlib.h>
 #include <mlib/mlib_shell.h>
 
-int mlib_parse_options(int argc, char *argv[]);
-int mlib_loop();
-
-extern int yylex();
-
-int main(int argc, char *argv[])
+/*
+ * The main user input handling loop.
+ */
+int mlib_loop()
 {
-	/*
-	 * Parse MLib's options.
-	 */
-	mlib_parse_options(argc, argv);
+	int ret, i __attribute__((unused));
+	int argc;
+	char **argv;
+	struct mlib_command *cmd;
 
-	/*
-	 * Init functions.
-	 */
-	mlib_init();
-	mlib_init_io();
+	while (mlib_read_line(&argc, &argv) != -1) {
+		/*
+		 * Exec the command. First elem of argv should be the command.
+		 */
+		cmd = mlib_find_command(argv[0]);
+		if (!cmd) {
+			mlib_printf("%s: command not found.\n", argv[0]);
+			goto done;
+		}
 
-	/*
-	 * And run the main loop.
-	 */
-	mlib_push_stream(NULL);
-	mlib_loop();
+		/*
+		 * Otherwise, exec the command func.
+		 */
+		ret = cmd->main(argc, argv);
+		if (ret)
+			mlib_printf("%s: terminated with error.\n", argv[0]);
 
-	return 0;
-}
+done:
+		/* Free argv. */
+		for (i = 0; i < argc; i++)
+			free(argv[i]);
+		free(argv);
+	}
 
-int mlib_parse_options(int argc, char *argv[])
-{
 	return 0;
 }
