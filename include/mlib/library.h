@@ -59,7 +59,7 @@ struct mlib_library_header {
 	uint32_t	media_count;
 
 	/*
-	 * An optional name for the library.
+	 * The name of the library.
 	 */
 	char		lib_name[116];
 
@@ -73,7 +73,7 @@ struct mlib_library_header {
 	 * path defined in the library.
 	 */
 	char		media_prefix[896];
-};
+} __atribute__((packed));
 
 /*
  * Library magic and types.

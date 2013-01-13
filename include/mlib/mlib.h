@@ -69,4 +69,9 @@ int	 mlib_printf(const char *fmt, ...)
 int	 mlib_lib_printf(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
 
+#define mlib_perror(FMT, ...)					\
+	do {							\
+		mlib_printf(FMT ": %s\n", strerror(errno));	\
+	} while (0)
+
 #endif

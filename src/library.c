@@ -25,3 +25,65 @@
 
 #include <mlib/mlib.h>
 
+/*
+ * A list for keeping track of all open libraries.
+ */
+struct mlib_library_listnode {
+	struct list_head	 	 list;
+	struct mlib_library_header	*library;
+	int				 fd;
+};
+
+static LIST_HEAD(library_list);
+
+/*
+ * Open a local library.
+ */
+int __mlib_open_local_lib(const char *lib_name)
+{
+	struct stat sb;
+	struct mlib_library_header *header;
+	struct mlib_library_listnode *lib;
+
+	lib = malloc(sizeof(struct mlib_library_listnode));
+	if (!lib) {
+		perror(lib_name);
+		return -1;
+	}
+
+	lib->fd = open(lib_name, O_RDWR);
+	if (lib->fd < 0) {
+		perror(lib_name);
+		goto fail;
+	}
+
+	if (fstat(lib->fd, &sb) == -1) {
+		perror(lib_name);
+		goto fail;
+	}
+
+	header = mmap(NULL, sb.st_size, PROT_READ|PROT_WRITE, MAP_SHARED,
+		      lib->fd, 0); 
+
+fail:
+	free(lib);
+}
+
+/**
+ * Open an MLib library pointed to by @location. If @remote is set then the
+ * location is assumed to be a URL of some kind. Otherwise the library is
+ * assumed to be a local file. Returns 0 on success, -1 on error.
+ *
+ * @url:	A URL to access.
+ */
+int mlib_open_library(const char *location, int remote)
+{
+	CURL *curl;
+
+	if (remote) {
+		/* TODO: support remote URLs. */
+		mlib_printf("Remotes not yet supported.\n");
+		return -1;
+	} else
+		return __mlib_open_local_lib(location);
+}

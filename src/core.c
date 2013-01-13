@@ -24,6 +24,8 @@
 
 #include <mlib/mlib.h>
 
+#include <curl/curl.h>
+
 static pthread_mutex_t mlib_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static LIST_HEAD(mlib_print_queue);
 
@@ -34,6 +36,10 @@ int mlib_init()
 {
 	if (mlib_register_builtins())
 		return -1;
+
+	/* Init libcurl. Necessary for loading mlib libraries. */
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	return 0;
 }
 
