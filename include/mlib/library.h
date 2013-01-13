@@ -38,6 +38,15 @@ struct mlib_path {
 };
 
 /*
+ * Library magic and types.
+ */
+#define MLIB_MAGIC			0x42494c4d	/* MLIB */
+#define MLIB_HEADER_SIZE		(1<<10)		/* 1 Kb */
+#define MLIB_HEADER_FIELD_COUNT		3	/* # of 32 bit fields */
+#define MLIB_LIBRARY_LIB_NAME_LEN	(128 - (4 * MLIB_HEADER_FIELD_COUNT))
+#define MLIB_LIBRARY_MEDIA_PREFIX_LEN	(MLIB_HEADER_SIZE - 128)
+
+/*
  * Header for a library. This struct is exactly 1 KByte.
  */
 struct mlib_library_header {
@@ -48,20 +57,20 @@ struct mlib_library_header {
 	uint32_t	mlib_magic;
 
 	/*
-	 * The type of library this is. There are two choices: playlist library
-	 * or path library.
-	 */
-	uint32_t	lib_type;
-
-	/*
 	 * Number of items in the library.
 	 */
 	uint32_t	media_count;
 
 	/*
-	 * An optional name for the library.
+	 * Size of the library. Limited to 4GB. Since this is not the actual
+	 * media itself, this doesn't seem too unreasonable.
 	 */
-	char		lib_name[116];
+	uint32_t	lib_len;
+
+	/*
+	 * The name of the library.
+	 */
+	char		lib_name[MLIB_LIBRARY_LIB_NAME_LEN];
 
 	/*
 	 * For remote libraries, this is available for specifying a URL prefix
@@ -72,20 +81,13 @@ struct mlib_library_header {
 	 * When media is actually accessed it will have the URL prefixed to the
 	 * path defined in the library.
 	 */
-	char		media_prefix[896];
-};
-
-/*
- * Library magic and types.
- */
-#define MLIB_MAGIC		0x4d4c4942	/* MLIB */
-#define MLIB_LIBTYPE_PATHS	(0x1 << 10)
-#define MLIB_LIBTYPE_PLISTS	(0x1 << 11)
+	char		media_prefix[MLIB_LIBRARY_MEDIA_PREFIX_LEN];
+} __attribute__((packed));
 
 /*
  * MLib library functions.
  */
+int	 mlib_library_init();
 int	 mlib_load_library(const char *url);
-
 
 #endif

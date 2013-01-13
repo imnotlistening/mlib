@@ -21,9 +21,13 @@
 #define _MLIB_H_
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <mlib/list.h>
 #include <mlib/library.h>
+
+#define MLIB_LOCAL	0
+#define	MLIB_REMOTE	1
 
 /*
  * Describe a command so that we can later execute it.
@@ -56,7 +60,7 @@ int	 mlib_init();
 /*
  * Command related functions.
  */
-int	 mlib_register_command(struct mlib_command *command);
+int	 mlib_command_register(struct mlib_command *command);
 struct mlib_command	*mlib_find_command(const char *name);
 int	 mlib_register_builtins();
 
@@ -68,5 +72,10 @@ int	 mlib_printf(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
 int	 mlib_lib_printf(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
+
+#define mlib_perror(FMT, ...)						\
+	do {								\
+		mlib_printf(FMT ": %s\n", ##__VA_ARGS__, strerror(errno)); \
+	} while (0)
 
 #endif

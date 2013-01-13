@@ -14,7 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with mlib.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Defines and maintains the list of known commands.
+ * Defines and maintains the list of known commands. Also includes a few simple
+ * command implementations.
  */
 
 #include <string.h>

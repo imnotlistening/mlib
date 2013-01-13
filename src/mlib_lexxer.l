@@ -51,13 +51,13 @@ WORD		[[:graph:]]{-}[^\"\']+
 		mlib_text = strdup(yytext);
 		return MLIB_LEX_STRING;
 	}
-<SINGLE_QUOTE>[[:print:]^\']+\'	{
+<SINGLE_QUOTE>([[:print:]]{-}[\'])+\'	{
 		mlib_text = strdup(yytext);
 		mlib_text[strlen(mlib_text) - 1] = 0;
 		BEGIN(INITIAL);
 		return MLIB_LEX_STRING;
 	}
-<DOUBLE_QUOTE>[[:print:]^\"]+\"	{
+<DOUBLE_QUOTE>([[:print:]]{-}[\"])+\"	{
 		mlib_text = strdup(yytext);
 		mlib_text[strlen(mlib_text) - 1] = 0;
 		BEGIN(INITIAL);

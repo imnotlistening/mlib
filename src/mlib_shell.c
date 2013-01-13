@@ -50,7 +50,8 @@ int mlib_loop()
 		 */
 		ret = cmd->main(argc, argv);
 		if (ret)
-			mlib_printf("%s: terminated with error.\n", argv[0]);
+			mlib_printf("%s: terminated with error (%d).\n",
+				    argv[0], ret);
 
 done:
 		/* Free argv. */
