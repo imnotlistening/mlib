@@ -85,6 +85,15 @@ struct mlib_library_header {
 } __attribute__((packed));
 
 /*
+ * A list node for keeping track of all open libraries.
+ */
+struct mlib_library {
+	struct list_head	 	 list;
+	struct mlib_library_header	*header;
+	int				 fd;
+};
+
+/*
  * MLib library functions.
  */
 int	 mlib_library_init();

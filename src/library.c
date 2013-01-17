@@ -32,15 +32,6 @@
 
 #include <curl/curl.h>
 
-/*
- * A list for keeping track of all open libraries.
- */
-struct mlib_library_listnode {
-	struct list_head	 	 list;
-	struct mlib_library_header	*library;
-	int				 fd;
-};
-
 static LIST_HEAD(library_list);
 
 /*
@@ -50,16 +41,46 @@ static LIST_HEAD(library_list);
 int __mlib_library_already_open(struct mlib_library_header *lib)
 {
 	struct list_head *elem;
+	struct mlib_library *cur_lib;
 	struct mlib_library_header *header;
-	struct mlib_library_listnode *cur_lib;
 
 	list_for_each(elem, &library_list) {
-		cur_lib = list_entry(elem, struct mlib_library_listnode, list);
-		header = cur_lib->library;
+		cur_lib = list_entry(elem, struct mlib_library, list);
+		header = cur_lib->header;
 		if (strncmp(lib->lib_name, header->lib_name,
 			    MLIB_LIBRARY_LIB_NAME_LEN) == 0)
 			return 1;
 	}
+	return 0;
+}
+
+/*
+ * Expand the passed FD to the requested length. If the library is longer this
+ * will overwrite existing data; this is for internal use only. Use
+ * __mlib_library_expand() instead.
+ */
+int __mlib_library_expand_fd(int fd, size_t len)
+{
+	if (lseek(fd, len - 1, SEEK_SET) == -1)
+		return -1;
+	return write(fd, "", 1);
+}
+
+/*
+ * Grow the size of a library to the requested length. If the library is
+ * already bigger than the passed size an error is returned.
+ */
+int __mlib_library_expand(struct mlib_library *lib, size_t len)
+{
+	int ret;
+
+	if (lib->header->lib_len >= len)
+		return -1;
+	ret = __mlib_library_expand_fd(lib->fd, len);
+	if (ret)
+		return ret;
+
+	lib->header->lib_len = len;
 	return 0;
 }
 
@@ -76,9 +97,6 @@ int mlib_create_library(const char *path, const char *name,
 	int fd;
 	struct mlib_library_header *header;
 
-	/*
-	 * Verify the inputs.
-	 */
 	if ((strlen(name) + 1 ) > MLIB_LIBRARY_LIB_NAME_LEN) {
 		mlib_printf("Library name too long.\n");
 		return -1;
@@ -95,15 +113,7 @@ int mlib_create_library(const char *path, const char *name,
 		return -1;
 	}
 
-	/* Create some actual file data for mmap. */
-	if (lseek(fd, 1023, SEEK_SET) == -1 ){
-		mlib_perror("lseek: %s", path);
-		goto fail;
-	}
-	if (write(fd, "", 1) != 1) {
-		mlib_perror("write: %s", path);
-		goto fail;
-	}
+	__mlib_library_expand_fd(fd, 1024);
 
 	header = mmap(NULL, 1024, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0); 
 	if (!header) {
@@ -131,16 +141,16 @@ fail:
 /*
  * Open a local library.
  */
-int __mlib_open_local_lib(const char *lib_name)
+struct mlib_library *__mlib_open_local_lib(const char *lib_name)
 {
 	struct stat sb;
+	struct mlib_library *lib;
 	struct mlib_library_header *header;
-	struct mlib_library_listnode *lib;
 
-	lib = malloc(sizeof(struct mlib_library_listnode));
+	lib = malloc(sizeof(struct mlib_library));
 	if (!lib) {
 		mlib_perror("malloc: %s", lib_name);
-		return -1;
+		return NULL;
 	}
 
 	lib->fd = open(lib_name, O_RDWR);
@@ -175,35 +185,83 @@ int __mlib_open_local_lib(const char *lib_name)
 		goto fail_2;
 	}
 
-	lib->library = header;
+	lib->header = header;
 	list_add_tail(&lib->list, &library_list);
-	return 0;
+	return lib;
 
 fail_2:
 	close(lib->fd);
 fail:
 	free(lib);
-	return -1;
+	return NULL;
 }
 
 /**
  * Open an MLib library pointed to by @location. If @remote is set then the
  * location is assumed to be a URL of some kind. Otherwise the library is
- * assumed to be a local file. Returns 0 on success, -1 on error.
+ * assumed to be a local file. Returns a pointer to the library on success or
+ * NULL on failure.
  *
  * @url:	A URL to access.
  */
-int mlib_open_library(const char *location, int remote)
+struct mlib_library *mlib_open_library(const char *location, int remote)
 {
 	CURL *curl __attribute__((unused));
 
 	if (remote) {
 		/* TODO: support remote URLs. */
 		mlib_printf("Remotes not yet supported.\n");
-		return -1;
+		return NULL;
 	} else {
 		return __mlib_open_local_lib(location);
 	}
+}
+
+/**
+ * Close a library. Returns 0 on succes, -1 otherwise.
+ *
+ * @lib:	The library to close.
+ */
+int mlib_close_library(struct mlib_library *lib)
+{
+	int ret;
+
+	list_del(&lib->list);
+
+	ret = msync(lib->header, lib->header->lib_len, MS_SYNC);
+	if (ret)
+		mlib_perror("msync - warning");
+	munmap(lib->header, lib->header->lib_len);
+
+	close(lib->fd);
+	free(lib);
+	return ret;
+}
+
+/**
+ * Find the pointer to the library with the passed @name. Returns a pointer to
+ * the named libray if it exists or NULL if not.
+ *
+ * @name	The name of the library.
+ */
+struct mlib_library *mlib_find_library(const char *name)
+{
+	int name_len;
+	struct list_head *elem;
+	struct mlib_library *lib;
+	struct mlib_library_header *header;
+
+	list_for_each(elem, &library_list) {
+		lib = list_entry(elem, struct mlib_library, list);
+		header = lib->header;
+
+		/* Print some useful info. */
+		name_len = strlen(header->lib_name);
+		if (strncmp(name, header->lib_name, name_len) == 0)
+			return lib;
+	}
+
+	return NULL;
 }
 
 /*
@@ -215,16 +273,18 @@ int mlib_open_library(const char *location, int remote)
  */
 int __mlib_open_library(int argc, char *argv[])
 {
-	int ret;
+	struct mlib_library *lib;
 
 	if (argc != 2) {
 		mlib_printf("Usage: open <lib-path>\n");
 		return 1;
 	}
 
-	ret = mlib_open_library(argv[1], MLIB_LOCAL);
-	if (ret)
+	lib = mlib_open_library(argv[1], MLIB_LOCAL);
+	if (!lib)
 		return 1;
+
+	mlib_printf("Opened library: %s\n", lib->header->lib_name);
 	return 0;
 }
 
@@ -235,6 +295,43 @@ static struct mlib_command mlib_command_open = {
 };
 
 /*
+ * Command to close a library. Usage:
+ *
+ *   close <lib-name>
+ *
+ */
+int __mlib_close_library(int argc, char *argv[])
+{
+	int ret;
+	struct mlib_library *lib;
+
+	if (argc != 2) {
+		mlib_printf("Usage: close <lib-name>\n");
+		return 1;
+	}
+
+	lib = mlib_find_library(argv[1]);
+	if (!lib) {
+		mlib_printf("Library does not exist: %s\n", argv[1]);
+		return 1;
+	}
+
+	ret = mlib_close_library(lib);
+	if (ret) {
+		mlib_printf("Failed to close %s\n", argv[1]);
+		return 1;
+	}
+
+	return 0;
+}
+
+static struct mlib_command mlib_command_close = {
+	.name = "close",
+	.desc = "Close a library.",
+	.main = __mlib_close_library,
+};
+
+/*
  * Command to display currently loaded libraries. Usage:
  *
  *   lslib
@@ -242,14 +339,14 @@ static struct mlib_command mlib_command_open = {
 int __mlib_list_libraries(int argc, char *argv[])
 {
 	struct list_head *elem;
+	struct mlib_library *lib;
 	struct mlib_library_header *header;
-	struct mlib_library_listnode *lib;
 
 	mlib_printf("Loaded libraries:\n");
 
 	list_for_each(elem, &library_list) {
-		lib = list_entry(elem, struct mlib_library_listnode, list);
-		header = lib->library;
+		lib = list_entry(elem, struct mlib_library, list);
+		header = lib->header;
 
 		/* Print some useful info. */
 		mlib_printf("  %-12s    ", header->lib_name);
@@ -298,6 +395,7 @@ static struct mlib_command mlib_command_create = {
 int mlib_library_init()
 {
 	mlib_command_register(&mlib_command_open);
+	mlib_command_register(&mlib_command_close);
 	mlib_command_register(&mlib_command_create);
 	mlib_command_register(&mlib_command_lslib);
 	return 0;
