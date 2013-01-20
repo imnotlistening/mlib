@@ -24,31 +24,6 @@
 
 static LIST_HEAD(mlib_command_list);
 
-/*
- * Compare the two passed strings: return < 0 if a is alphabetically less than
- * b, 0 if a == b, and > 0 if b is alphabetically greater than a.
- *
- * This is case sensitive. 'A' > 'a-z'
- */
-int __mlib_alphabet_cmp(const char *a, const char *b)
-{
-	int min_len, i;
-	int min_len_a = strlen(a);
-	int min_len_b = strlen(b);
-
-	if (min_len_a < min_len_b)
-		min_len = min_len_a;
-	else
-		min_len = min_len_b;
-
-	for (i = 0; i < min_len; i++) {
-		if (a[i] == b[i])
-			continue;
-		return a[i] - b[i];
-	}
-	return min_len_b - min_len_a;
-}
-
 /**
  * Register a command with MLib.
  *
@@ -82,7 +57,7 @@ int mlib_command_register(struct mlib_command *command)
 
 	/*
 	 * If we get here, the command should be placed at the end as it was
-	 * alphabetically larger than everything else.
+	 * lexicographically larger than everything else.
 	 */
 	list_add_tail(&command->list, &mlib_command_list);
 

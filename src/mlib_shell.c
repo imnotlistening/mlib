@@ -30,30 +30,21 @@
  */
 int mlib_loop()
 {
-	int ret, i __attribute__((unused));
+	int i;
 	int argc;
 	char **argv;
 	struct mlib_command *cmd;
 
 	while (mlib_read_line(&argc, &argv) != -1) {
-		/*
-		 * Exec the command. First elem of argv should be the command.
-		 */
 		cmd = mlib_find_command(argv[0]);
 		if (!cmd) {
 			mlib_printf("%s: command not found.\n", argv[0]);
 			goto done;
 		}
 
-		/*
-		 * Otherwise, exec the command func.
-		 */
-		ret = cmd->main(argc, argv);
-		if (ret)
-			mlib_printf("%s: terminated with error (%d).\n",
-				    argv[0], ret);
+		cmd->main(argc, argv);
 
-done:
+	done:
 		/* Free argv. */
 		for (i = 0; i < argc; i++)
 			free(argv[i]);

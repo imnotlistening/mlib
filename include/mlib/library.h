@@ -117,6 +117,7 @@ struct mlib_playlist {
 #define MLIB_PLIST_MAGIC(plist)		__mlib_readl(&(plist)->playlist_magic)
 #define MLIB_PLIST_LEN(plist)		__mlib_readl(&(plist)->length)
 #define MLIB_PLIST_MCOUNT(plist)	__mlib_readl(&(plist)->mcount)
+#define MLIB_PLIST_NAME(plist)		((plist)->name)
 
 #define MLIB_PLIST_SET_MAGIC(plist, val)		\
 	__mlib_writel(&(plist)->playlist_magic, val)
@@ -135,6 +136,17 @@ struct mlib_playlist {
 	for (plist = mlib_next_playlist(lib, NULL);	\
 	     plist != NULL;				\
 	     plist = mlib_next_playlist(lib, plist))	\
+
+/**
+ * Reads through all of the playlists in a library.
+ *
+ * @lib		A pointer to the library.
+ * @plist	A pointer variable to use to hold the playlist pointer.
+ */
+#define mlib_for_each_path(plist, path)			\
+	for (path = mlib_next_path(plist, NULL);	\
+	     path != NULL;				\
+	     path = mlib_next_path(plist, path))	\
 
 /*
  * MLib library functions for general use.
@@ -157,6 +169,11 @@ struct mlib_playlist	 *mlib_next_playlist(const struct mlib_library *lib,
 					     struct mlib_playlist *plist);
 struct mlib_playlist	 *mlib_find_playlist(const struct mlib_library *lib,
 					     const char *name);
+int	 mlib_add_path_to_plist(struct mlib_library *lib,
+				struct mlib_playlist *plist, const char *path);
+int	 mlib_add_path(struct mlib_library *lib, const char *plist,
+		       const char *path);
+
 /*
  * Highly specialized functions not for external use.
  */

@@ -93,6 +93,58 @@ struct mlib_playlist *mlib_next_playlist(const struct mlib_library *lib,
 }
 
 /**
+ * Read through the paths in a play list. if @path is NULL, then start with
+ * the first path. Returns the path after @path or NULL if there are no more
+ * paths in the playlist.
+ *
+ * @plist	The playlist to iterate through.
+ * @path	The index path.
+ */
+char *mlib_next_path(const struct mlib_playlist *plist, char *path)
+{
+	unsigned long plist_addr, path_addr;
+
+	if (path == NULL) {
+		if (MLIB_PLIST_LEN(plist) > sizeof(struct mlib_playlist))
+			return (char *)plist->data;
+		else
+			return NULL; /* Empty playlist. */
+	}
+
+	/* Increment to the next null byte. */
+	while (*path++ != 0)
+		;
+
+	/* Validate and return. */
+	plist_addr = (unsigned long)plist;
+	path_addr  = (unsigned long)path;
+	if (path_addr >= plist_addr + MLIB_PLIST_LEN(plist))
+		return NULL;
+	return path;
+}
+
+/**
+ * Find a playlist in the specified library. If a playlist is found, a pointer
+ * to that playlist is returned. This playlist must not be directly accessed.
+ * If no playlist is found, then returns NULL.
+ *
+ * @lib		Library to search through.
+ * @name	Name of the playlist to look for,
+ */
+struct mlib_playlist *mlib_find_playlist(const struct mlib_library *lib,
+					 const char *name)
+{
+	struct mlib_playlist *plist;
+
+	mlib_for_each_pls(lib, plist) {
+		if (strncmp(MLIB_PLIST_NAME(plist), name,
+			    MLIB_PLIST_NAME_LEN) == 0)
+			return plist;
+	}
+	return NULL;
+}
+
+/**
  * Create an empty playlist in the passed library.
  *
  * @lib		The library to add the playlist to.
@@ -102,6 +154,11 @@ int mlib_start_playlist(struct mlib_library *lib, const char *name)
 {
 	uint32_t newlen;
 	struct mlib_playlist *plist;
+
+	if (mlib_find_playlist(lib, name)) {
+		mlib_printf("playlist '%s' already exists.\n", name);
+		return -1;
+	}
 
 	if (strlen(name) >= (MLIB_PLIST_NAME_LEN - 1))
 		mlib_printf("warning: truncating playlist name.\n");
@@ -122,10 +179,99 @@ int mlib_start_playlist(struct mlib_library *lib, const char *name)
 	return mlib_sync_library(lib);
 }
 
+/**
+ * Add the passed path to a playlist. If an error occurs, < 0 is returned,
+ * otherwise 0 is returned.
+ *
+ * @lib		Library to find the playlist in.
+ * @plist	A pointer to the playlist itself.
+ * @path	A path to add.
+ */
+int mlib_add_path_to_plist(struct mlib_library *lib,
+			   struct mlib_playlist *plist, const char *path)
+{
+	int cmp;
+	void *base;
+	char *index_path;
+	uint32_t new_size;
+	uint32_t path_offs = 0; /* From the start of the library itself. */
+	unsigned long lib_addr, path_addr;
+
+	/*
+	 * Internally this is a pain. The algorithm is as follows:
+	 *
+	 *   1. Find where to place the path based on alphabetical order. This
+	 *      is also used to make sure we don't add duplicate paths.
+	 *   2. Expand the library to the required size based on how long the
+	 *      passed path is.
+	 *   3. Now move everything past the place where we will put the path.
+	 *   4. Copy the new path in.
+	 */
+	lib_addr = (unsigned long)lib->header;
+	mlib_for_each_path(plist, index_path) {
+		cmp = strcmp(path, index_path);
+
+		if (cmp == 0) {
+			mlib_printf("Path '%s' already exists.\n", path);
+			return -1;
+		}
+		if (cmp < 0) {
+			path_addr = (unsigned long)index_path;
+			path_offs = (uint32_t)(path_addr - lib_addr);
+			break;
+		}
+	}
+
+	/* Occurs when a path needs to be added at the end of the playlist. */
+	if (path_offs == 0) {
+		path_addr = (unsigned long)plist + MLIB_PLIST_LEN(plist);
+		path_offs = (uint32_t)(path_addr - lib_addr);
+	}
+
+	new_size = MLIB_LIB_LEN(lib) + strlen(path) + 1;
+	if (__mlib_library_expand(lib, new_size)) {
+		mlib_printf("Failed to allocate space for path.\n");
+		return -1;
+	}
+
+	base = ((void *)lib->header) + path_offs;
+	memmove(base + strlen(path) + 1, base, new_size - path_offs);
+
+	/* Finally! */
+	memcpy(base, path, strlen(path) + 1);
+
+	MLIB_PLIST_SET_LEN(plist, MLIB_PLIST_LEN(plist) + strlen(path) + 1);
+	MLIB_PLIST_SET_MCOUNT(plist, MLIB_PLIST_MCOUNT(plist) + 1);
+	return 0;
+}
+
+/**
+ * Add the passed path to a playlist. If the playlist does not exist or an
+ * error occurs, < 0 is returned, otherwise 0 is returned.
+ *
+ * @lib		Library to find the playlist in.
+ * @plist	Name of the playlist.
+ * @path	A path to add.
+ */
+int mlib_add_path(struct mlib_library *lib, const char *plist,
+		  const char *path)
+{
+	struct mlib_playlist *real_plist;
+
+	real_plist = mlib_find_playlist(lib, plist);
+	if (!real_plist) {
+		mlib_printf("Playlist '%s' not found.\n", plist);
+		return -1;
+	}
+
+	return mlib_add_path_to_plist(lib, real_plist, path);
+}
+
+
 /*
  * Create an empty playlist. Very simple low level command here. Usage:
  *
- *   makepls <lib> <name>
+ *   mkpls <lib> <name>
  */
 int __mlib_make_playlist(int argc, char *argv[])
 {
@@ -133,7 +279,7 @@ int __mlib_make_playlist(int argc, char *argv[])
 	struct mlib_library *lib;
 
 	if (argc != 3) {
-		mlib_printf("Usage: makepls <lib> <name>\n");
+		mlib_printf("Usage: mkpls <lib> <name>\n");
 		return 1;
 	}
 
@@ -152,24 +298,25 @@ int __mlib_make_playlist(int argc, char *argv[])
 	return 0;
 }
 
-static struct mlib_command mlib_command_makepls = {
-	.name = "makepls",
+static struct mlib_command mlib_command_mkpls = {
+	.name = "mkpls",
 	.desc = "Create an empty playlist.",
 	.main = __mlib_make_playlist,
 };
 
 /*
- * List play lists in a library: usage:
+ * List play lists in a library or paths in a playlist. Usage:
  *
- *   lspls <lib>
+ *   lspls <lib> [playlist]
  */
 int __mlib_ls_playlist(int argc, char *argv[])
 {
+	char *path;
 	struct mlib_library *lib;
 	struct mlib_playlist *plist;
 
-	if (argc != 2) {
-		mlib_printf("Usage: lspls <lib>\n");
+	if (argc < 2 || argc > 4) {
+		mlib_printf("Usage: lspls <lib> [playlist]\n");
 		return 1;
 	}
 
@@ -179,14 +326,19 @@ int __mlib_ls_playlist(int argc, char *argv[])
 		return 1;
 	}
 
-	/*
-	mlib_for_each_pls(lib, plist)
-		mlib_printf("%5d  - %s\n", plist->mcount, plist->name);
-	*/
-
-	plist = NULL;
-	while ((plist = mlib_next_playlist(lib, plist)) != NULL) {
-		mlib_printf("%5d  - %s\n", plist->mcount, plist->name);
+	if (argc == 2) {
+		mlib_for_each_pls(lib, plist)
+			mlib_printf("%5d  - %s\n", MLIB_PLIST_MCOUNT(plist),
+				    MLIB_PLIST_NAME(plist));
+	} else {
+		plist = mlib_find_playlist(lib, argv[2]);
+		if (!plist) {
+			mlib_printf("Playlist '%s' does not exist.\n",
+				    argv[2]);
+			return 1;
+		}
+		mlib_for_each_path(plist, path)
+			mlib_printf("%s\n", path);
 	}
 
 	return 0;
@@ -198,9 +350,43 @@ static struct mlib_command mlib_command_lspls = {
 	.main = __mlib_ls_playlist,
 };
 
+/*
+ * Add a path to the specified playlist. Usage:
+ *
+ *   plsadd <lib> <playlist> <path>
+ */
+int __mlib_playlist_add(int argc, char *argv[])
+{
+	int ret;
+	struct mlib_library *lib;
+
+	if (argc != 4) {
+		mlib_printf("Usage: plsaa <lib> <plist> <path>\n");
+		return 1;
+	}
+
+	lib = mlib_find_library(argv[1]);
+	if (!lib) {
+		mlib_printf("Library '%s' not loaded.\n", argv[1]);
+		return 1;
+	}
+
+	ret = mlib_add_path(lib, argv[2], argv[3]);
+	if (ret)
+		return 1;
+	return 0;
+}
+
+static struct mlib_command mlib_command_plsadd = {
+	.name = "plsadd",
+	.desc = "Add a path to a playlist.",
+	.main = __mlib_playlist_add,
+};
+
 int mlib_playlist_init()
 {
-	mlib_command_register(&mlib_command_makepls);
+	mlib_command_register(&mlib_command_mkpls);
 	mlib_command_register(&mlib_command_lspls);
+	mlib_command_register(&mlib_command_plsadd);
 	return 0;
 }
