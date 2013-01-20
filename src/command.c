@@ -24,6 +24,31 @@
 
 static LIST_HEAD(mlib_command_list);
 
+/*
+ * Compare the two passed strings: return < 0 if a is alphabetically less than
+ * b, 0 if a == b, and > 0 if b is alphabetically greater than a.
+ *
+ * This is case sensitive. 'A' > 'a-z'
+ */
+int __mlib_alphabet_cmp(const char *a, const char *b)
+{
+	int min_len, i;
+	int min_len_a = strlen(a);
+	int min_len_b = strlen(b);
+
+	if (min_len_a < min_len_b)
+		min_len = min_len_a;
+	else
+		min_len = min_len_b;
+
+	for (i = 0; i < min_len; i++) {
+		if (a[i] == b[i])
+			continue;
+		return a[i] - b[i];
+	}
+	return min_len_b - min_len_a;
+}
+
 /**
  * Register a command with MLib.
  *
@@ -31,8 +56,36 @@ static LIST_HEAD(mlib_command_list);
  */
 int mlib_command_register(struct mlib_command *command)
 {
-	/* TODO: verify list does not already have this command in it. */
+	int cmp;
+	struct list_head *elem;
+	struct mlib_command *cmd;
+
+	/*
+	 * Maintain an alphabetical ordering of the commands. This makes it
+	 * easy to both check that a command has not already been registered
+	 * and add the command.
+	 */
+	list_for_each(elem, &mlib_command_list) {
+		cmd = list_entry(elem, struct mlib_command, list);
+		cmp = strcmp(command->name, cmd->name);
+
+		if (cmp == 0) {
+			mlib_printf("Command %s already registered.\n",
+				    command->name);
+			return -1;
+		}
+		if (cmp < 0) {
+			list_add_tail(&command->list, &cmd->list);
+			return 0;
+		}
+	}
+
+	/*
+	 * If we get here, the command should be placed at the end as it was
+	 * alphabetically larger than everything else.
+	 */
 	list_add_tail(&command->list, &mlib_command_list);
+
 	return 0;
 }
 
@@ -147,7 +200,7 @@ static struct mlib_command mlib_command_help = {
  */
 int __mlib_exit(int argc, char *argv[])
 {
-	exit(0);
+	mlib_exit(0);
 	return 0;
 }
 

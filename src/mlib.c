@@ -19,6 +19,10 @@
  * TODO: write a description of the MLib architecture.
  */
 
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <mlib/mlib.h>
 #include <mlib/mlib_shell.h>
 
@@ -29,21 +33,23 @@ extern int yylex();
 
 int main(int argc, char *argv[])
 {
-	/*
-	 * Parse MLib's options.
-	 */
-	mlib_parse_options(argc, argv);
+	int ret;
 
 	/*
-	 * Init functions.
+	 * Parse MLib's options. 
 	 */
+	/* mlib_parse_options(argc, argv); */
+
+	/* Init functions. */
 	mlib_init();
 	mlib_init_io();
 
-	/*
-	 * And run the main loop.
-	 */
-	mlib_push_stream(NULL);
+	if (argv[1]) {
+		ret = mlib_push_stream(argv[1]);
+		if (!ret)
+			mlib_printf("Executing: %s\n", argv[1]);
+	}
+
 	mlib_loop();
 
 	return 0;
@@ -51,5 +57,14 @@ int main(int argc, char *argv[])
 
 int mlib_parse_options(int argc, char *argv[])
 {
+	return 0;
+}
+
+/*
+ * Write out history file when we get killed.
+ */
+int sigint_handler(int sig)
+{
+	mlib_exit(1);
 	return 0;
 }

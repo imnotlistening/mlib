@@ -17,33 +17,72 @@
  * Core code that all modules and programs will need.
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <pthread.h>
 
-#include <mlib/mlib.h>
-
 #include <curl/curl.h>
+#include <readline/history.h>
+
+#include <mlib/mlib.h>
 
 static pthread_mutex_t mlib_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static LIST_HEAD(mlib_print_queue);
+
+static char hist_file[512];
+
+/*
+ * Get the name of the history file.
+ */
+char *__mlib_hist_file()
+{
+	if (hist_file[0])
+		return hist_file;
+
+	snprintf(hist_file, 512, "%s/.mlib_history", getenv("HOME"));
+	return hist_file;
+}
 
 /**
  * Must be called prior to using the MLib library.
  */
 int mlib_init()
 {
+	int ret;
+
 	if (mlib_register_builtins())
 		return -1;
 
 	/* Init libcurl. Necessary for loading mlib libraries. */
 	curl_global_init(CURL_GLOBAL_ALL);
 
-	/* Init library loading code. */
+	/* Init all the various built in functions. */
 	mlib_library_init();
+	mlib_playlist_init();
+
+	ret = read_history(__mlib_hist_file());
+	if (ret < 0)
+		mlib_perror("Failed to read history file %s\n",
+			    __mlib_hist_file());
 
 	return 0;
+}
+
+/**
+ * Exit the mlib shell.
+ */
+void mlib_exit(int status)
+{
+	int ret;
+
+	ret = write_history(__mlib_hist_file());
+	if (ret < 0)
+		mlib_perror("Failed to write history file %s\n",
+			    __mlib_hist_file());
+
+	exit(status);
 }
 
 /**

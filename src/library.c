@@ -42,12 +42,10 @@ int __mlib_library_already_open(struct mlib_library_header *lib)
 {
 	struct list_head *elem;
 	struct mlib_library *cur_lib;
-	struct mlib_library_header *header;
 
 	list_for_each(elem, &library_list) {
 		cur_lib = list_entry(elem, struct mlib_library, list);
-		header = cur_lib->header;
-		if (strncmp(lib->lib_name, header->lib_name,
+		if (strncmp(lib->lib_name, MLIB_LIB_NAME(cur_lib),
 			    MLIB_LIBRARY_LIB_NAME_LEN) == 0)
 			return 1;
 	}
@@ -74,13 +72,13 @@ int __mlib_library_expand(struct mlib_library *lib, size_t len)
 {
 	int ret;
 
-	if (lib->header->lib_len >= len)
+	if (MLIB_LIB_LEN(lib) >= len)
 		return -1;
 	ret = __mlib_library_expand_fd(lib->fd, len);
-	if (ret)
+	if (ret < 0)
 		return ret;
 
-	lib->header->lib_len = len;
+	MLIB_LIB_SET_LEN(lib, len);
 	return 0;
 }
 
@@ -122,9 +120,9 @@ int mlib_create_library(const char *path, const char *name,
 	}
 
 	memset(header, MLIB_HEADER_SIZE, 0);
-	header->mlib_magic = MLIB_MAGIC;
-	header->media_count = 0;
-	header->lib_len = 1024;
+	__mlib_writel(&header->mlib_magic, MLIB_MAGIC);
+	__mlib_writel(&header->media_count, 0);
+	__mlib_writel(&header->lib_len, 1024);
 	memcpy(header->lib_name, name, strlen(name) + 1);
 	memcpy(header->media_prefix, media_prefix, strlen(media_prefix) + 1);
 
@@ -174,7 +172,7 @@ struct mlib_library *__mlib_open_local_lib(const char *lib_name)
 		mlib_perror("mmap: %s", lib_name);
 		goto fail_2;
 	}
-	if (header->mlib_magic != MLIB_MAGIC) {
+	if (__mlib_readl(&header->mlib_magic) != MLIB_MAGIC) {
 		mlib_printf("%s: not an mlib library.\n", lib_name);
 		goto fail_2;
 	}
@@ -228,10 +226,10 @@ int mlib_close_library(struct mlib_library *lib)
 
 	list_del(&lib->list);
 
-	ret = msync(lib->header, lib->header->lib_len, MS_SYNC);
+	ret = mlib_sync_library(lib);
 	if (ret)
 		mlib_perror("msync - warning");
-	munmap(lib->header, lib->header->lib_len);
+	munmap(lib->header, MLIB_LIB_LEN(lib));
 
 	close(lib->fd);
 	free(lib);
@@ -249,19 +247,28 @@ struct mlib_library *mlib_find_library(const char *name)
 	int name_len;
 	struct list_head *elem;
 	struct mlib_library *lib;
-	struct mlib_library_header *header;
 
 	list_for_each(elem, &library_list) {
 		lib = list_entry(elem, struct mlib_library, list);
-		header = lib->header;
 
 		/* Print some useful info. */
-		name_len = strlen(header->lib_name);
-		if (strncmp(name, header->lib_name, name_len) == 0)
+		name_len = strlen(MLIB_LIB_NAME(lib));
+		if (strncmp(name, MLIB_LIB_NAME(lib), name_len) == 0)
 			return lib;
 	}
 
 	return NULL;
+}
+
+/**
+ * Sync a library to disk. Returns the error code from the mysnc() call: that
+ * is 0 on success, < 0 on failure.
+ *
+ * @lib		The library to sync.
+ */
+int mlib_sync_library(const struct mlib_library *lib)
+{
+	return msync(lib->header, MLIB_LIB_LEN(lib), MS_SYNC);
 }
 
 /*
@@ -284,7 +291,7 @@ int __mlib_open_library(int argc, char *argv[])
 	if (!lib)
 		return 1;
 
-	mlib_printf("Opened library: %s\n", lib->header->lib_name);
+	mlib_printf("Opened library: %s\n", MLIB_LIB_NAME(lib));
 	return 0;
 }
 
@@ -340,17 +347,15 @@ int __mlib_list_libraries(int argc, char *argv[])
 {
 	struct list_head *elem;
 	struct mlib_library *lib;
-	struct mlib_library_header *header;
 
 	mlib_printf("Loaded libraries:\n");
 
 	list_for_each(elem, &library_list) {
 		lib = list_entry(elem, struct mlib_library, list);
-		header = lib->header;
 
 		/* Print some useful info. */
-		mlib_printf("  %-12s    ", header->lib_name);
-		mlib_printf("%s\n", header->media_prefix);
+		mlib_printf("  %-12s    ", MLIB_LIB_NAME(lib));
+		mlib_printf("%s\n", MLIB_LIB_PREFIX(lib));
 	}
 	return 0;
 }
@@ -371,7 +376,6 @@ int __mlib_create_library(int argc, char *argv[])
 	int ret;
 
 	if (argc != 4) {
-		mlib_printf("argc = %d\n", argc);
 		mlib_printf("Usage: create <path> <name> <media_prefix>\n");
 		return -1;
 	}

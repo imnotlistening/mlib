@@ -49,9 +49,7 @@ extern int yylex(void);
 int mlib_init_io()
 {
 	using_history();
-	
 	current_stream = stdin;
-	mlib_printf("Using stdin as base stream.\n");
 
 	return 0;
 }
@@ -221,6 +219,8 @@ size_t mlib_readbuf(char *buffer, size_t max)
 		stat = fgets(buffer, max, current_stream);
 	} else {
 		stat = __mlib_readbuf_term(buffer, max);
+		if (stat && strlen(stat) > 0)
+			add_history(stat);
 	}
 
 	if (!stat)

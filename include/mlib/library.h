@@ -23,24 +23,9 @@
 #include <stdint.h>
 
 /*
- * A path to a media file.
- */
-struct mlib_path {
-	/*
-	 * Length of the path.
-	 */
-	uint32_t	length;
-
-	/*
-	 * The path itself.
-	 */
-	char		path[];
-};
-
-/*
  * Library magic and types.
  */
-#define MLIB_MAGIC			0x42494c4d	/* MLIB */
+#define MLIB_MAGIC			0x4d4c4942	/* MLIB */
 #define MLIB_HEADER_SIZE		(1<<10)		/* 1 Kb */
 #define MLIB_HEADER_FIELD_COUNT		3	/* # of 32 bit fields */
 #define MLIB_LIBRARY_LIB_NAME_LEN	(128 - (4 * MLIB_HEADER_FIELD_COUNT))
@@ -94,9 +79,87 @@ struct mlib_library {
 };
 
 /*
- * MLib library functions.
+ * Macros to read and write to the library itself. These handle endianness
+ * issues that arise from different architectures directly accessing the target
+ * library. We store libraries as big endian data.
+ */
+#define __mlib_readl(addr)       be32toh(*addr)
+#define __mlib_writel(addr, val) ((*addr) = htobe32(val))
+
+/* TODO: Byte level endianness handlers? */
+#define MLIB_LIB_MAGIC(lib)	__mlib_readl(&(lib)->header->mlib_magic)
+#define MLIB_LIB_LEN(lib)	__mlib_readl(&(lib)->header->lib_len)
+#define MLIB_LIB_NAME(lib)	((lib)->header->lib_name)
+#define MLIB_LIB_PREFIX(lib)	((lib)->header->media_prefix)
+
+#define MLIB_LIB_SET_MAGIC(lib, val)		\
+	__mlib_writel(&(lib)->header->lib_len, val)
+#define MLIB_LIB_SET_LEN(lib, val)		\
+	__mlib_writel(&(lib)->header->lib_len, val)
+
+#define MLIB_PLIST_HDR_MAGIC	0x10202010
+#define MLIB_PLIST_FIELDS	3
+#define MLIB_PLIST_NAME_LEN	(128 - (MLIB_PLIST_FIELDS * sizeof(uint32_t)))
+
+/*
+ * A path to a media file. The header is 128 bytes long: 3 uint32_t fields and
+ * 116 bytes of name data. The actual elements follow as a list of contiguous
+ * null terminated strings.
+ */
+struct mlib_playlist {
+	uint32_t	playlist_magic;	/* Mark the start of a playlist. */
+	uint32_t	length;		/* Length of playlist in bytes. */
+	uint32_t	mcount;		/* Number of elements in playlist. */
+	char		name[MLIB_PLIST_NAME_LEN];
+	char		data[];
+} __attribute__((packed));
+
+#define MLIB_PLIST_MAGIC(plist)		__mlib_readl(&(plist)->playlist_magic)
+#define MLIB_PLIST_LEN(plist)		__mlib_readl(&(plist)->length)
+#define MLIB_PLIST_MCOUNT(plist)	__mlib_readl(&(plist)->mcount)
+
+#define MLIB_PLIST_SET_MAGIC(plist, val)		\
+	__mlib_writel(&(plist)->playlist_magic, val)
+#define MLIB_PLIST_SET_LEN(plist, val)			\
+	__mlib_writel(&(plist)->length, val)
+#define MLIB_PLIST_SET_MCOUNT(plist, val)		\
+	__mlib_writel(&(plist)->mcount, val)
+
+/**
+ * Reads through all of the playlists in a library.
+ *
+ * @lib		A pointer to the library.
+ * @plist	A pointer variable to use to hold the playlist pointer.
+ */
+#define mlib_for_each_pls(lib, plist)			\
+	for (plist = mlib_next_playlist(lib, NULL);	\
+	     plist != NULL;				\
+	     plist = mlib_next_playlist(lib, plist))	\
+
+/*
+ * MLib library functions for general use.
  */
 int	 mlib_library_init();
 int	 mlib_load_library(const char *url);
+int	 mlib_create_library(const char *path, const char *name,
+			     const char *media_prefix);
+struct mlib_library	*mlib_open_library(const char *location, int remote);
+struct mlib_library	*mlib_find_library(const char *name);
+int	 mlib_sync_library(const struct mlib_library *lib);
+int	 mlib_close_library(struct mlib_library *lib);
+
+/*
+ * Playlist functions for general use.
+ */
+int	 mlib_playlist_init();
+int	 mlib_start_playlist(struct mlib_library *lib, const char *name);
+struct mlib_playlist	 *mlib_next_playlist(const struct mlib_library *lib,
+					     struct mlib_playlist *plist);
+struct mlib_playlist	 *mlib_find_playlist(const struct mlib_library *lib,
+					     const char *name);
+/*
+ * Highly specialized functions not for external use.
+ */
+int	 __mlib_library_expand(struct mlib_library *lib, size_t len);
 
 #endif

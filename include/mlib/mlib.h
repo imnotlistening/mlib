@@ -37,7 +37,8 @@ struct mlib_command {
 	const char		*desc;
 
 	/*
-	 * Main entrance function for the command.
+	 * Main entrance function for the command - like a regular main. The
+	 * first elem of argv will be the name of the command itself.
 	 */
 	int			(*main)(int argc, char *argv[]);
 
@@ -56,6 +57,7 @@ struct mlib_msg {
  * Core functionality.
  */
 int	 mlib_init();
+void	 mlib_exit(int status);
 
 /*
  * Command related functions.
