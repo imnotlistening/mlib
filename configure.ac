@@ -32,5 +32,6 @@ AC_LIBTOOL_DLOPEN
 AC_DISABLE_STATIC
 
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile modules/Makefile
+			  modules/test_mod/Makefile])
 AC_OUTPUT
