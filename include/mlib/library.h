@@ -178,5 +178,8 @@ int	 mlib_add_path(struct mlib_library *lib, const char *plist,
  * Highly specialized functions not for external use.
  */
 int	 __mlib_library_expand(struct mlib_library *lib, size_t len);
+int	 __mlib_library_trunc(struct mlib_library *lib, size_t len);
+int 	__mlib_library_excise(struct mlib_library *lib, void *start,
+			      void *end);
 
 #endif

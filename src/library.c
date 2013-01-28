@@ -82,6 +82,26 @@ int __mlib_library_expand(struct mlib_library *lib, size_t len)
 	return 0;
 }
 
+/*
+ * Will truncate an mlib_library down to the passed size. If the passed size is
+ * greater than the current length or less than 1024 (size of mlib header) then
+ * less than 0 will be returned. Otherwise, 0 is returned on success, < 0 on
+ * error.
+ */
+int __mlib_library_trunc(struct mlib_library *lib, size_t len)
+{
+	int ret;
+
+	if (len < 1024 || len > MLIB_LIB_LEN(lib))
+		return -1;
+
+	ret = ftruncate(lib->fd, len);
+	if (ret < 0)
+		return ret;
+	MLIB_LIB_SET_LEN(lib, len);
+	return 0;
+}
+
 /**
  * Create a library from scratch with @name located in @path.
  *
@@ -269,6 +289,31 @@ struct mlib_library *mlib_find_library(const char *name)
 int mlib_sync_library(const struct mlib_library *lib)
 {
 	return msync(lib->header, MLIB_LIB_LEN(lib), MS_SYNC);
+}
+
+/*
+ * Excise a range of the passed library. Everything between @start and @end is
+ * removed from the library. Data past @end is moved to overwrite the data
+ * between @start and @end.
+ *
+ * @lib		The library.
+ * @start	The starting location of data.
+ * @end		Where to stop excising data.
+ */
+int __mlib_library_excise(struct mlib_library *lib, void *start, void *end)
+{
+	uint32_t bytes;
+	size_t libend;
+	void *lib_start, *lib_end;
+
+	lib_start = lib->header;
+	lib_end = lib_start + MLIB_LIB_LEN(lib);
+
+	bytes = lib_end - end;
+	memmove(start, end, bytes);
+
+	libend = MLIB_LIB_LEN(lib) - (end - start);
+	return __mlib_library_trunc(lib, libend);
 }
 
 /*

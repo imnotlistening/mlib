@@ -180,6 +180,35 @@ int mlib_start_playlist(struct mlib_library *lib, const char *name)
 }
 
 /**
+ * Delete a playlist from the passed library. Returns 0 on succes, -1 on error.
+ *
+ * @lib		The library to use.
+ * @name	Name of the playlist.
+ */
+int mlib_delete_playlist(struct mlib_library *lib, const char *name)
+{
+	void *start, *end;
+	uint32_t plist_len;
+	struct mlib_playlist *plist;
+
+	plist = mlib_find_playlist(lib, name);
+	if (!plist) {
+		mlib_printf("Playlist '%s' does not exist.\n", name);
+		return -1;
+	}
+
+	plist_len = MLIB_PLIST_LEN(plist);
+	start = plist;
+	end = start + plist_len;
+
+	if (__mlib_library_excise(lib, start, end)) {
+		mlib_printf("Failed to truncate '%s'\n", MLIB_LIB_NAME(lib));
+		return -1;
+	}
+	return 0;
+}
+
+/**
  * Add the passed path to a playlist. If an error occurs, < 0 is returned,
  * otherwise 0 is returned.
  *
@@ -361,7 +390,7 @@ int __mlib_playlist_add(int argc, char *argv[])
 	struct mlib_library *lib;
 
 	if (argc != 4) {
-		mlib_printf("Usage: plsaa <lib> <plist> <path>\n");
+		mlib_printf("Usage: plsadd <lib> <plist> <path>\n");
 		return 1;
 	}
 
@@ -383,9 +412,41 @@ static struct mlib_command mlib_command_plsadd = {
 	.main = __mlib_playlist_add,
 };
 
+/*
+ * Remove a playlist. Usage:
+ *
+ *   rmpls <lib> <pls>
+ */
+int __mlib_rm_playlist(int argc, char *argv[])
+{
+	struct mlib_library *lib;
+
+	if (argc != 3) {
+		mlib_printf("Usage: rmpls <lib> <plist>\n");
+		return 1;
+	}
+
+	lib = mlib_find_library(argv[1]);
+	if (!lib) {
+		mlib_printf("Library '%s' not loaded.\n", argv[1]);
+		return 1;
+	}
+
+	if (!mlib_delete_playlist(lib, argv[2]))
+	    return 1;
+	return 0;
+}
+
+static struct mlib_command mlib_command_rmpls = {
+	.name = "rmpls",
+	.desc = "Remove a playlist.",
+	.main = __mlib_rm_playlist,
+};
+
 int mlib_playlist_init()
 {
 	mlib_command_register(&mlib_command_mkpls);
+	mlib_command_register(&mlib_command_rmpls);
 	mlib_command_register(&mlib_command_lspls);
 	mlib_command_register(&mlib_command_plsadd);
 	return 0;
