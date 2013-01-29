@@ -24,6 +24,7 @@ LIBCURL_CHECK_CONFIG()
 
 # Standard libraries we need.
 AC_CHECK_LIB(pthread, pthread_create)
+AC_CHECK_LIB(dl, dlopen)
 
 # Gonna build some shared libraries.
 AC_CONFIG_MACRO_DIR([m4])

@@ -33,4 +33,5 @@ int test_mod_fini(void)
 	return 0;
 }
 
-MLIB_MODULE("test-mod", test_mod_init, test_mod_fini);
+MLIB_MODULE("test-mod", test_mod_init, test_mod_fini,
+	    "A simple test module.");

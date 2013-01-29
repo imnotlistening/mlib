@@ -26,19 +26,22 @@
  */
 struct mlib_module {
 	const char		*name;
+	const char		*desc;
 	int			(*init)(void);
 	int			(*fini)(void);
 	struct list_head	 list_node;
+	void			*mod_syms;
 };
 
 /*
  * Module functions for everyone to use.
  */
+int mlib_load_module(const char *path);
 
 /*
  * Module functions for mlib core to use.
  */
-
+int mlib_module_init(void);
 
 /**
  * This macro should be called once and only once for each module to be loaded
@@ -48,8 +51,9 @@ struct mlib_module {
  * @init	Init function. Gets called right after being loaded.
  * @fini	Function called to cleanup any module resources on closuer.
  */
-#define MLIB_MODULE(NAME, INIT, FINI)			\
-	const struct mlib_module __mlib_module_desc = {	\
+#define MLIB_MODULE(NAME, INIT, FINI, DESC)		\
+	struct mlib_module __mlib_module_desc__ = {	\
+		.desc = DESC,				\
 		.name = NAME,				\
 		.init = INIT,				\
 		.fini = FINI,				\

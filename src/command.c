@@ -84,23 +84,6 @@ struct mlib_command *mlib_find_command(const char *name)
 }
 
 /*
- * Load an MLib module.
- *
- * @argc:	The arg count
- * @argv:	The argument vector
- */
-int __mlib_loadm(int argc, char *argv[])
-{
-	return -2;
-}
-
-static struct mlib_command mlib_command_loadm = {
-	.name = "loadm",
-	.desc = "Load an MLib module.",
-	.main = __mlib_loadm,
-};
-
-/*
  * Run an MLib script.
  *
  * @argc:	The arg count
@@ -191,7 +174,6 @@ static struct mlib_command mlib_command_exit = {
  */
 int mlib_register_builtins()
 {
-	mlib_command_register(&mlib_command_loadm);
 	mlib_command_register(&mlib_command_echo);
 	mlib_command_register(&mlib_command_run);
 	mlib_command_register(&mlib_command_help);

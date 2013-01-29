@@ -26,14 +26,137 @@
 
 static LIST_HEAD(mlib_modules);
 
+/*
+ * Quick check to see if a module is loaded already. Returns non-zero if the
+ * passed module shares a name with any already loaded module.
+ */
+int mlib_module_loaded(const struct mlib_module *mod)
+{
+	struct list_head *elem;
+	struct mlib_module *module;
+
+	list_for_each(elem, &mlib_modules) {
+		module = list_entry(elem, struct mlib_module, list_node);
+		if (module == mod)
+			return 1;
+	}
+
+	return 0;
+}
+
 /**
  * Load the module in the passed string. A 0 is returned if successful, other
  * wise < 0 will be returned.
  *
  * @path	Path to the module. Will be resolved based on shared library
- * 		loadign rules.
+ * 		loading rules.
  */
 int mlib_load_module(const char *path)
 {
+	void *mod_syms;
+	struct mlib_module *module;
+
+	mod_syms = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
+	if (!mod_syms) {
+		mlib_printf("Failed to load %s: %s\n", path, dlerror());
+		return -1;
+	}
+
+	module = dlsym(mod_syms, "__mlib_module_desc__");
+	if (!module) {
+		mlib_printf("Failed to find module definition: %s\n",
+			    dlerror());
+		return 0;
+	}
+	module->mod_syms = mod_syms;
+
+	if (!module->name) {
+		mlib_printf("Module must have a name.\n");
+		goto fail;
+	}
+
+	if (mlib_module_loaded(module)) {
+		mlib_printf("Module '%s' already loaded.\n", module->name);
+		return -1; /* We don't want to free the module... */
+	}
+
+	if (module->init && module->init())
+		goto fail;
+
+	list_add_tail(&module->list_node, &mlib_modules);
+	return 0;
+
+ fail:
+	dlclose(mod_syms);
+	return -1;
+}
+
+/*
+ * Load a module. Usage:
+ *
+ *   load <mod-name>
+ */
+int __mlib_load_module(int argc, char *argv[])
+{
+	if (argc != 2) {
+		mlib_printf("Usage: load <mod-name>\n");
+		return -1;
+	}
+
+	if (mlib_load_module(argv[1]))
+		return -1;
+
+	mlib_printf("Loaded %s\n", argv[1]);
+	return 0;
+}
+
+static struct mlib_command mlib_command_load = {
+	.name = "load",
+	.desc = "Load a module.",
+	.main = __mlib_load_module,
+};
+
+/*
+ * Display the list of currently loaded modules. Usage
+ *
+ *   lsmod
+ */
+int __mlib_lsmod(int argc, char *argv[])
+{
+	struct list_head *elem;
+	struct mlib_module *module;
+
+	if (argc != 1) {
+		mlib_printf("Usage: lsmod\n");
+		return -1;
+	}
+
+	mlib_printf("Loaded modules:\n");
+	list_for_each(elem, &mlib_modules) {
+		module = list_entry(elem, struct mlib_module, list_node);
+
+		mlib_printf("  %-11s", module->name);
+		if (module->desc)
+			mlib_printf(" %s\n", module->desc);
+		else
+			mlib_printf("\n");
+	}
+
+	return 0;
+}
+
+static struct mlib_command mlib_command_lsmod = {
+	.name = "lsmod",
+	.desc = "Display loaded modules.",
+	.main = __mlib_lsmod,
+};
+
+/*
+ * Init the module loading code.
+ */
+int mlib_module_init(void)
+{
+	mlib_command_register(&mlib_command_load);
+	mlib_command_register(&mlib_command_lsmod);
 	return 0;
 }
