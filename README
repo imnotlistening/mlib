@@ -11,8 +11,19 @@
 
 1.  Intro
 
+    This project is still a work in progress. As I have time I will keep
+updating it further and further.
 
 2.  Building
+
+2.0  Building from a distribution
+
+     Although there are no releases yet, eventually the code will be buildable
+by the familiar:
+
+    $ ./configure
+    $ make
+    # make install
 
 2.1  Building from git source
 
