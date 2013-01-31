@@ -114,6 +114,7 @@ int mlib_create_library(const char *path, const char *name,
 {
 	int fd;
 	struct mlib_library_header *header;
+	struct mlib_library lib;
 
 	if ((strlen(name) + 1 ) > MLIB_LIBRARY_LIB_NAME_LEN) {
 		mlib_printf("Library name too long.\n");
@@ -146,8 +147,15 @@ int mlib_create_library(const char *path, const char *name,
 	memcpy(header->lib_name, name, strlen(name) + 1);
 	memcpy(header->media_prefix, media_prefix, strlen(media_prefix) + 1);
 
+	/* Make the global playlist .global - Doesn't need to be in the list
+	 * for mlib_start_playlist() to work. */
+	lib.header = header;
+	lib.fd = fd;
+	mlib_start_playlist(&lib, ".global");
+
 	/* Sync and close. */
 	msync(header, MLIB_HEADER_SIZE, MS_SYNC);
+	munmap(header, MLIB_LIB_LEN(&lib));
 	close(fd);
 	return 0;
 
