@@ -61,6 +61,7 @@ int mlib_init()
 	/* Init all the various built in functions. */
 	mlib_library_init();
 	mlib_playlist_init();
+	mlib_bucket_init();
 
 	ret = read_history(__mlib_hist_file());
 	if (ret < 0)

@@ -23,6 +23,16 @@
 #include <stdint.h>
 
 /*
+ * Macros to read and write to the library itself. These handle endianness
+ * issues that arise from different architectures directly accessing the target
+ * library. We store libraries as big endian data.
+ */
+#define __mlib_readl(addr)       be32toh(*addr)
+#define __mlib_writel(addr, val) ((*addr) = htobe32(val))
+
+#include <mlib/plist_bucket.h>
+
+/*
  * Library magic and types.
  */
 #define MLIB_MAGIC			0x4d4c4942	/* MLIB */
@@ -78,14 +88,6 @@ struct mlib_library {
 	int				 fd;
 };
 
-/*
- * Macros to read and write to the library itself. These handle endianness
- * issues that arise from different architectures directly accessing the target
- * library. We store libraries as big endian data.
- */
-#define __mlib_readl(addr)       be32toh(*addr)
-#define __mlib_writel(addr, val) ((*addr) = htobe32(val))
-
 /* TODO: Byte level endianness handlers? */
 #define MLIB_LIB_MAGIC(lib)	__mlib_readl(&(lib)->header->mlib_magic)
 #define MLIB_LIB_LEN(lib)	__mlib_readl(&(lib)->header->lib_len)
@@ -102,16 +104,15 @@ struct mlib_library {
 #define MLIB_PLIST_NAME_LEN	(128 - (MLIB_PLIST_FIELDS * sizeof(uint32_t)))
 
 /*
- * A path to a media file. The header is 128 bytes long: 3 uint32_t fields and
- * 116 bytes of name data. The actual elements follow as a list of contiguous
- * null terminated strings.
+ * Playlist structure. The header is 128 bytes long: 3 uint32_t fields and
+ * 116 bytes of name data. The hashtable is of variable size.
  */
 struct mlib_playlist {
 	uint32_t	playlist_magic;	/* Mark the start of a playlist. */
 	uint32_t	length;		/* Length of playlist in bytes. */
 	uint32_t	mcount;		/* Number of elements in playlist. */
 	char		name[MLIB_PLIST_NAME_LEN];
-	char		data[];
+	struct mlib_bucket	data;
 } __attribute__((packed));
 
 #define MLIB_PLIST_MAGIC(plist)		__mlib_readl(&(plist)->playlist_magic)
@@ -143,10 +144,10 @@ struct mlib_playlist {
  * @lib		A pointer to the library.
  * @plist	A pointer variable to use to hold the playlist pointer.
  */
-#define mlib_for_each_path(plist, path)			\
-	for (path = mlib_next_path(plist, NULL);	\
-	     path != NULL;				\
-	     path = mlib_next_path(plist, path))	\
+#define mlib_for_each_path(plist, ind, path)			\
+	for (ind = 0, path = mlib_get_path_at(plist, ind);	\
+	     path != NULL;					\
+	     path = mlib_get_path_at(plist, ++ind))
 
 /*
  * MLib library functions for general use.
@@ -173,13 +174,17 @@ int	 mlib_add_path_to_plist(struct mlib_library *lib,
 				struct mlib_playlist *plist, const char *path);
 int	 mlib_add_path(struct mlib_library *lib, const char *plist,
 		       const char *path);
+const char	*mlib_get_path_at(const struct mlib_playlist *plist,
+				  int index);
 
 /*
  * Highly specialized functions not for external use.
  */
 int	 __mlib_library_expand(struct mlib_library *lib, size_t len);
 int	 __mlib_library_trunc(struct mlib_library *lib, size_t len);
-int 	__mlib_library_excise(struct mlib_library *lib, void *start,
-			      void *end);
+int 	 __mlib_library_excise(struct mlib_library *lib, void *start,
+			       void *end);
+int	 __mlib_library_insert_space(struct mlib_library *lib, uint32_t offset,
+				     uint32_t length);
 
 #endif
