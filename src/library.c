@@ -83,6 +83,31 @@ int __mlib_library_expand(struct mlib_library *lib, size_t len)
 }
 
 /*
+ * Insert some blank space into the passed library at @offset. The amount of
+ * space to insert is @length bytes.
+ */
+int __mlib_library_insert_space(struct mlib_library *lib, uint32_t offset,
+				uint32_t length)
+{
+	void *lib_start = lib->header;
+	uint32_t move_len;
+
+	move_len = MLIB_LIB_LEN(lib) - offset;
+
+	if (__mlib_library_expand(lib, MLIB_LIB_LEN(lib) + length)) {
+		mlib_printf("Failed to expand library by %u bytes\n.",
+			    length);
+		return -1;
+	}
+
+	/* Now we have space, so push pre-existing data to the end. */
+	memmove(lib_start + offset + length, lib_start + offset, move_len);
+	memset(lib_start + offset, 0, length);
+	return 0;
+}
+
+
+/*
  * Will truncate an mlib_library down to the passed size. If the passed size is
  * greater than the current length or less than 1024 (size of mlib header) then
  * less than 0 will be returned. Otherwise, 0 is returned on success, < 0 on
@@ -114,12 +139,13 @@ int mlib_create_library(const char *path, const char *name,
 {
 	int fd;
 	struct mlib_library_header *header;
+	struct mlib_library lib;
 
-	if ((strlen(name) + 1 ) > MLIB_LIBRARY_LIB_NAME_LEN) {
+	if ((strlen(name) + 1) > MLIB_LIBRARY_LIB_NAME_LEN) {
 		mlib_printf("Library name too long.\n");
 		return -1;
 	}
-	if ((strlen(media_prefix) + 1 ) > MLIB_LIBRARY_MEDIA_PREFIX_LEN) {
+	if ((strlen(media_prefix) + 1) > MLIB_LIBRARY_MEDIA_PREFIX_LEN) {
 		mlib_printf("Library media prefix too long.\n");
 		return -1;
 	}
@@ -146,8 +172,15 @@ int mlib_create_library(const char *path, const char *name,
 	memcpy(header->lib_name, name, strlen(name) + 1);
 	memcpy(header->media_prefix, media_prefix, strlen(media_prefix) + 1);
 
+	/* Make the global playlist .global - Doesn't need to be in the list
+	 * for mlib_start_playlist() to work. */
+	lib.header = header;
+	lib.fd = fd;
+	mlib_start_playlist(&lib, ".global");
+
 	/* Sync and close. */
 	msync(header, MLIB_HEADER_SIZE, MS_SYNC);
+	munmap(header, MLIB_LIB_LEN(&lib));
 	close(fd);
 	return 0;
 

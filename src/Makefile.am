@@ -13,7 +13,7 @@ libmlib_la_LDFLAGS = -lcurl
 
 # The MLib program itself.
 bin_PROGRAMS	= mlib
-mlib_SOURCES	= mlib.c mlib_shell.c mlib_io.c mlib_lexxer.l
+mlib_SOURCES	= mlib.c mlib_shell.c mlib_io.c mlib_lexxer.l bucket.c
 mlib_LDADD	= libmlib.la -lreadline
 
 # Libtool nicity. 

@@ -62,6 +62,7 @@ int mlib_init()
 	mlib_library_init();
 	mlib_playlist_init();
 	mlib_module_init();
+	mlib_bucket_init();
 
 	ret = read_history(__mlib_hist_file());
 	if (ret < 0)
