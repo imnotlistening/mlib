@@ -1,0 +1,45 @@
+#
+# Simple script to test out the basic library functionality.
+#
+
+create test-lib.mlib tl /home/alex/Music
+open   test-lib.mlib
+
+# Make a playlist
+mkpls tl pls-test
+
+plsadd tl pls-test audiodump.wav
+plsadd tl pls-test "Deadmau5 - Ghosts N Stuff (Original Mix).mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 01 - Jacqueline.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 02 - Tell Her Tonight.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 03 - Take Me Out.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 04 - The Dark Of The Matinee.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 05 - Auf Achse.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 06 - Cheating On You.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 07 - This Fire.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 08 - Darts Of Pleasure.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 09 - Michael.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 10 - Come On Home.mp3"
+plsadd tl pls-test "Franz Ferdinand/Franz Ferdinand - 11 - 40 ft.mp3"
+
+#lspls tl
+#lspls tl pls-test
+
+mkpls tl pls-test2
+
+plsadd tl pls-test2 audiodump.wav
+plsadd tl pls-test2 "Deadmau5 - Ghosts N Stuff (Original Mix).mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 01 - Jacqueline.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 02 - Tell Her Tonight.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 03 - Take Me Out.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 04 - The Dark Of The Matinee.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 05 - Auf Achse.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 06 - Cheating On You.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 07 - This Fire.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 08 - Darts Of Pleasure.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 09 - Michael.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 10 - Come On Home.mp3"
+plsadd tl pls-test2 "Franz Ferdinand/Franz Ferdinand - 11 - 40 ft.mp3"
+
+#lspls tl
+#lspls tl pls-test

@@ -1,0 +1,19 @@
+#
+# Simple test script to make a library and test out the bucket functionality.
+#
+
+create test-lib.mlib tl /home/alex/Music
+open   test-lib.mlib
+
+
+# And now add some paths.
+plsadd tl .global audiodump.wav
+plsadd tl .global blah.wav
+plsadd tl .global blah-c.wav
+plsadd tl .global blah-d.wav
+plsadd tl .global blah-a.wav
+plsadd tl .global blah-e.wav
+plsadd tl .global blah-b.wav
+
+# Dump the bucket status - requires the debug preprocessor flag to be set.
+bucket_dump tl .global
