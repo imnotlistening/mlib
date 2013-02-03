@@ -14,45 +14,36 @@
  * You should have received a copy of the GNU General Public License
  * along with mlib.  If not, see <http://www.gnu.org/licenses/>.
  *
- * The MLib shell.
+ * Wrapper to use mplayer to play media URIs.
  */
-
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <mlib/mlib.h>
-#include <mlib/mlib_shell.h>
+#include <mlib/engine.h>
+#include <mlib/module.h>
 
-/*
- * The main user input handling loop.
- */
-int mlib_loop()
+int mplayer_play_URI(const char *uri)
 {
-	int i;
-	int argc;
-	char **argv;
-	struct mlib_command *cmd;
-
-	while (mlib_read_line(&argc, &argv) != -1) {
-		cmd = mlib_find_command(argv[0]);
-		if (!cmd) {
-			mlib_printf("%s: command not found.\n", argv[0]);
-			goto done;
-		}
-
-		cmd->main(argc, argv);
-
-	done:
-		/* Free argv. */
-		for (i = 0; i < argc; i++)
-			free(argv[i]);
-		free(argv);
-
-		/* Empty the print queue. */
-		mlib_empty_print_queue();
-	}
-
+	mlib_queue_printf("Playing %s\n", uri);
 	return 0;
 }
+
+static struct mlib_engine mplayer_engine = {
+	.name = "mplayer-engine",
+	.caps = MLIB_ENGINE_AUDIO | MLIB_ENGINE_VIDEO,
+	.play_audio = mplayer_play_URI,
+	.play_video = mplayer_play_URI,
+};
+
+int mplayer_engine_init(void)
+{
+	return mlib_engine_register(&mplayer_engine);
+	return 0;
+}
+
+int mplayer_engine_fini(void)
+{
+	return 0;
+}
+
+MLIB_MODULE("mplayer-engine", mplayer_engine_init, mplayer_engine_fini,
+	    "Mplayer backend to play media URIs.");

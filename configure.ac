@@ -34,5 +34,6 @@ AC_DISABLE_STATIC
 
 
 AC_CONFIG_FILES([Makefile src/Makefile modules/Makefile
-			  modules/test_mod/Makefile])
+			  modules/test_mod/Makefile
+			  modules/mplayer_engine/Makefile])
 AC_OUTPUT

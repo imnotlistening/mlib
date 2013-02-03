@@ -8,7 +8,7 @@ AM_CPPFLAGS	= -I../include
 
 # The MLib shared library; modules can link against this.
 lib_LTLIBRARIES	= libmlib.la
-libmlib_la_SOURCES = module.c library.c core.c command.c playlist.c
+libmlib_la_SOURCES = module.c library.c core.c command.c playlist.c engine.c
 libmlib_la_LDFLAGS = -lcurl
 
 # The MLib program itself.
