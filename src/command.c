@@ -45,8 +45,8 @@ int mlib_command_register(struct mlib_command *command)
 		cmp = strcmp(command->name, cmd->name);
 
 		if (cmp == 0) {
-			mlib_printf("Command %s already registered.\n",
-				    command->name);
+			mlib_error("Command %s already registered.\n",
+				   command->name);
 			return -1;
 		}
 		if (cmp < 0) {

@@ -20,6 +20,7 @@
 #ifndef _MLIB_H_
 #define _MLIB_H_
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -78,9 +79,20 @@ int	 mlib_lib_printf(const char *fmt, ...)
 int	 mlib_queue_printf(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
 
+#define mlib_error(FMT, ...)						\
+	do {								\
+		fprintf(stderr, "%s@%d:%s() " FMT, __FILE__, __LINE__,	\
+			__func__, ##__VA_ARGS__);			\
+	} while (0)
+#define mlib_user_error(FMT, ...)					\
+	do {								\
+		fprintf(stderr, FMT, ##__VA_ARGS__);			\
+	} while (0)
+
 #define mlib_perror(FMT, ...)						\
 	do {								\
-		mlib_printf(FMT ": %s\n", ##__VA_ARGS__, strerror(errno)); \
+		mlib_user_error(FMT ": %s\n", ##__VA_ARGS__,		\
+				strerror(errno));			\
 	} while (0)
 
 #endif

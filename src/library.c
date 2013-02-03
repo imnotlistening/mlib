@@ -95,8 +95,7 @@ int __mlib_library_insert_space(struct mlib_library *lib, uint32_t offset,
 	move_len = MLIB_LIB_LEN(lib) - offset;
 
 	if (__mlib_library_expand(lib, MLIB_LIB_LEN(lib) + length)) {
-		mlib_printf("Failed to expand library by %u bytes\n.",
-			    length);
+		mlib_error("Failed to expand library by %u bytes\n.", length);
 		return -1;
 	}
 
@@ -142,11 +141,11 @@ int mlib_create_library(const char *path, const char *name,
 	struct mlib_library lib;
 
 	if ((strlen(name) + 1) > MLIB_LIBRARY_LIB_NAME_LEN) {
-		mlib_printf("Library name too long.\n");
+		mlib_error("Library name too long.\n");
 		return -1;
 	}
 	if ((strlen(media_prefix) + 1) > MLIB_LIBRARY_MEDIA_PREFIX_LEN) {
-		mlib_printf("Library media prefix too long.\n");
+		mlib_error("Library media prefix too long.\n");
 		return -1;
 	}
 
@@ -215,7 +214,7 @@ struct mlib_library *__mlib_open_local_lib(const char *lib_name)
 		goto fail_2;
 	}
 	if (sb.st_size < 1024) {
-		mlib_printf("%s: not an mlib library.\n", lib_name);
+		mlib_error("%s: not an mlib library.\n", lib_name);
 		goto fail_2;
 	}
 
@@ -226,13 +225,13 @@ struct mlib_library *__mlib_open_local_lib(const char *lib_name)
 		goto fail_2;
 	}
 	if (__mlib_readl(&header->mlib_magic) != MLIB_MAGIC) {
-		mlib_printf("%s: not an mlib library.\n", lib_name);
+		mlib_error("%s: not an mlib library.\n", lib_name);
 		goto fail_2;
 	}
 
 	/* Make sure the library is not already open. */
 	if (__mlib_library_already_open(header)) {
-		mlib_printf("Library %s is already open.\n", header->lib_name);
+		mlib_error("Library %s is already open.\n", header->lib_name);
 		goto fail_2;
 	}
 
@@ -261,7 +260,7 @@ struct mlib_library *mlib_open_library(const char *location, int remote)
 
 	if (remote) {
 		/* TODO: support remote URLs. */
-		mlib_printf("Remotes not yet supported.\n");
+		mlib_error("Remotes not yet supported.\n");
 		return NULL;
 	} else {
 		return __mlib_open_local_lib(location);

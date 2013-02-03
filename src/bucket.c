@@ -48,7 +48,7 @@
 int mlib_init_bucket(struct mlib_bucket *bucket, uint32_t size)
 {
 	if (size < sizeof(struct mlib_bucket)) {
-		mlib_printf("Bucket size too small.\n");
+		mlib_error("Bucket size too small.\n");
 		return -1;
 	}
 

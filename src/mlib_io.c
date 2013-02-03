@@ -73,8 +73,8 @@ int mlib_push_stream(const char *stream)
 
 	str->stream = fopen(stream, "r");
 	if (!str->stream) {
-		mlib_printf("Failed to open %s: %s\n", stream,
-			    strerror(errno));
+		mlib_error("Failed to open %s: %s\n", stream,
+			   strerror(errno));
 		goto fail;
 	}
 	list_add(&str->list, &input_streams);
@@ -155,7 +155,7 @@ done_line:
 		return 0;
 
 error:
-	mlib_printf("Error reading line.\n");
+	mlib_error("Error reading line.\n");
 	free(local_argv);
 	*argv = NULL;
 	return -1;
@@ -211,7 +211,7 @@ size_t mlib_readbuf(char *buffer, size_t max)
 	char *stat = NULL;
 
 	if (!current_stream) {
-		mlib_printf("No current stream.\n");
+		mlib_error("No current stream.\n");
 		return 0;
 	}
 

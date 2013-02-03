@@ -68,8 +68,8 @@ struct mlib_playlist *mlib_next_playlist(const struct mlib_library *lib,
 		if (__mlib_plist_check_len(lib, tmp_plist))
 			return NULL;
 		if (MLIB_PLIST_MAGIC(tmp_plist) != MLIB_PLIST_HDR_MAGIC) {
-			mlib_printf("Library corruption detected.\n");
-			mlib_printf("Invalid playist header magic found.\n");
+			mlib_error("Library corruption detected.\n");
+			mlib_error("Invalid playist header magic found.\n");
 			return NULL;
 		}
 		return tmp_plist;
@@ -84,8 +84,8 @@ struct mlib_playlist *mlib_next_playlist(const struct mlib_library *lib,
 	if (__mlib_plist_check_len(lib, tmp_plist))
 		return NULL;
 	if (MLIB_PLIST_MAGIC(tmp_plist) != MLIB_PLIST_HDR_MAGIC) {
-		mlib_printf("Library corruption detected.\n");
-		mlib_printf("Invalid playist header magic found.\n");
+		mlib_error("Library corruption detected.\n");
+		mlib_error("Invalid playist header magic found.\n");
 		return NULL;
 	}
 
@@ -141,7 +141,7 @@ int mlib_start_playlist(struct mlib_library *lib, const char *name)
 	struct mlib_playlist *plist;
 
 	if (mlib_find_playlist(lib, name)) {
-		mlib_printf("playlist '%s' already exists.\n", name);
+		mlib_user_error("playlist '%s' already exists.\n", name);
 		return -1;
 	}
 
@@ -182,7 +182,7 @@ int mlib_delete_playlist(struct mlib_library *lib, const char *name)
 
 	plist = mlib_find_playlist(lib, name);
 	if (!plist) {
-		mlib_printf("Playlist '%s' does not exist.\n", name);
+		mlib_user_error("Playlist '%s' does not exist.\n", name);
 		return -1;
 	}
 
@@ -191,7 +191,7 @@ int mlib_delete_playlist(struct mlib_library *lib, const char *name)
 	end = start + plist_len;
 
 	if (__mlib_library_excise(lib, start, end)) {
-		mlib_printf("Failed to truncate '%s'\n", MLIB_LIB_NAME(lib));
+		mlib_error("Failed to truncate '%s'\n", MLIB_LIB_NAME(lib));
 		return -1;
 	}
 	return 0;
@@ -234,8 +234,8 @@ int mlib_add_path(struct mlib_library *lib, const char *plist,
 	if (strcmp(plist, ".global")) {
 		global_plist = mlib_find_playlist(lib, ".global");
 		if (!global_plist) {
-			mlib_printf("Library corruption: "
-				    ".global plist not found.\n");
+			mlib_error("Library corruption: "
+				   ".global plist not found.\n");
 			return -1;
 		}
 		mlib_add_path_to_plist(lib, global_plist, path);
@@ -243,7 +243,7 @@ int mlib_add_path(struct mlib_library *lib, const char *plist,
 
 	real_plist = mlib_find_playlist(lib, plist);
 	if (!real_plist) {
-		mlib_printf("Playlist '%s' not found.\n", plist);
+		mlib_user_error("Playlist '%s' not found.\n", plist);
 		return -1;
 	}
 	return mlib_add_path_to_plist(lib, real_plist, path);

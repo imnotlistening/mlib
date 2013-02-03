@@ -58,25 +58,25 @@ int mlib_load_module(const char *path)
 
 	mod_syms = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 	if (!mod_syms) {
-		mlib_printf("Failed to load %s: %s\n", path, dlerror());
+		mlib_error("Failed to load %s: %s\n", path, dlerror());
 		return -1;
 	}
 
 	module = dlsym(mod_syms, "__mlib_module_desc__");
 	if (!module) {
-		mlib_printf("Failed to find module definition: %s\n",
+		mlib_error("Failed to find module definition: %s\n",
 			    dlerror());
 		return 0;
 	}
 	module->mod_syms = mod_syms;
 
 	if (!module->name) {
-		mlib_printf("Module must have a name.\n");
+		mlib_error("Module must have a name.\n");
 		goto fail;
 	}
 
 	if (mlib_module_loaded(module)) {
-		mlib_printf("Module '%s' already loaded.\n", module->name);
+		mlib_user_error("Module '%s' already loaded.\n", module->name);
 		return -1; /* We don't want to free the module... */
 	}
 

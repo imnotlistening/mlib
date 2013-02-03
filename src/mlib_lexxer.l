@@ -71,8 +71,8 @@ WORD		[[:graph:]]{-}[^\"\']+
 
 [[:blank:]]+ /* Eat spaces. */
 .	{ /* Eat anything else. */
-		mlib_printf("[lexxer] error: unknown character: %c\n",
-			    *yytext);
+		mlib_error("[lexxer] error: unknown character: %c\n",
+			   *yytext);
 		return MLIB_LEX_ERROR;
 	}
 
