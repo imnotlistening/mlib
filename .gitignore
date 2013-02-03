@@ -1,23 +1,57 @@
-*.[oad]
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
 *.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Emacs backups.
 *~
-*.png
 
-# Some binaries and files we generate.
-libmyrt.so*
-myrt
-lexxer.c
-bin/*
+# http://www.gnu.org/software/automake
 
-# Autoconf files
 Makefile.in
-depcomp
-install-sh
-missing
-configure
-autom4te.cache
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+
+# More autoconf stuff.
+*.lo
+*.la
+
 Makefile
+config.guess
 config.log
 config.status
+config.sub
+config.h
+libtool
 ltmain.sh
+.deps/
+.libs/
+stamp-h1
 m4/
+ylwrap
+
+# MLib specific things.
+src/mlib_lexxer.c
+*.mlib
+src/mlib
