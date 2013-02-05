@@ -1,2 +1,2 @@
-SUBDIRS = src modules
+SUBDIRS = src modules regress
 ACLOCAL_AMFLAGS = -I m4
