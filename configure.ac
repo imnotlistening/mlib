@@ -10,7 +10,7 @@ AM_PROG_LEX
 
 AC_CONFIG_HEADERS([config.h])
 
-AC_CHECK_HEADERS([sys/mman.h readline/readline.h readline/history.h])
+AC_CHECK_HEADERS([sys/mman.h readline/readline.h readline/history.h curl/curl.h])
 
 # Gonna need these.
 AC_TYPE_PID_T
@@ -20,11 +20,12 @@ AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
 
 # Check for libcurl.
-LIBCURL_CHECK_CONFIG()
+PKG_CHECK_MODULES([libcurl], [libcurl >= 7.19.0])
 
 # Standard libraries we need.
 AC_CHECK_LIB(pthread, pthread_create)
 AC_CHECK_LIB(dl, dlopen)
+AC_CHECK_LIB(curl, curl_global_init)
 
 # Gonna build some shared libraries.
 AC_CONFIG_MACRO_DIR([m4])
@@ -33,7 +34,7 @@ AC_LIBTOOL_DLOPEN
 AC_DISABLE_STATIC
 
 
-AC_CONFIG_FILES([Makefile src/Makefile modules/Makefile
+AC_CONFIG_FILES([Makefile src/Makefile modules/Makefile regress/Makefile
 			  modules/test_mod/Makefile
 			  modules/mplayer_engine/Makefile])
 AC_OUTPUT

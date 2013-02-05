@@ -252,7 +252,8 @@ fail:
  * assumed to be a local file. Returns a pointer to the library on success or
  * NULL on failure.
  *
- * @url:	A URL to access.
+ * @url		A URL to access.
+ * @remote	Set to 1 if the library is remote.
  */
 struct mlib_library *mlib_open_library(const char *location, int remote)
 {

@@ -62,7 +62,7 @@ int mlib_init_bucket(struct mlib_bucket *bucket, uint32_t size)
 /*
  * Return uint32_t pointer to the index array.
  */
-inline uint32_t *mlib_bucket_indexes(const struct mlib_bucket *bucket)
+uint32_t *mlib_bucket_indexes(const struct mlib_bucket *bucket)
 {
 	return ((void *)bucket) + MLIB_BUCKET_INDEX_OFFS(bucket);
 }
@@ -70,7 +70,7 @@ inline uint32_t *mlib_bucket_indexes(const struct mlib_bucket *bucket)
 /*
  * Compute the number of indexes in a bucket.
  */
-inline int mlib_bucket_nr_indexes(const struct mlib_bucket *bucket)
+int mlib_bucket_nr_indexes(const struct mlib_bucket *bucket)
 {
 	return (MLIB_BUCKET_LENGTH(bucket) - MLIB_BUCKET_INDEX_OFFS(bucket)) /
 		sizeof(uint32_t);
@@ -79,7 +79,7 @@ inline int mlib_bucket_nr_indexes(const struct mlib_bucket *bucket)
 /*
  * Return index value at particular offset.
  */
-inline uint32_t mlib_bucket_index(const struct mlib_bucket *bucket, int i)
+uint32_t mlib_bucket_index(const struct mlib_bucket *bucket, int i)
 {
 	uint32_t *indexes = mlib_bucket_indexes(bucket);
 	return __mlib_readl(&indexes[i]);
@@ -90,7 +90,7 @@ inline uint32_t mlib_bucket_index(const struct mlib_bucket *bucket, int i)
  * is we first compute index N then use that to find where the string is and
  * return that string.
  */
-inline const char *mlib_bucket_string(const struct mlib_bucket *bucket, int n)
+const char *mlib_bucket_string(const struct mlib_bucket *bucket, int n)
 {
 	uint32_t str_offset = mlib_bucket_index(bucket, n);
 	return bucket->strings + str_offset;
@@ -99,7 +99,7 @@ inline const char *mlib_bucket_string(const struct mlib_bucket *bucket, int n)
 /*
  * Return the string at the request string offset.
  */
-inline const char *mlib_bucket_string_at(const struct mlib_bucket *bucket,
+const char *mlib_bucket_string_at(const struct mlib_bucket *bucket,
 					 uint32_t offset)
 {
 	return bucket->strings + offset;

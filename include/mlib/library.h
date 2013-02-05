@@ -153,7 +153,6 @@ struct mlib_playlist {
  * MLib library functions for general use.
  */
 int	 mlib_library_init();
-int	 mlib_load_library(const char *url);
 int	 mlib_create_library(const char *path, const char *name,
 			     const char *media_prefix);
 struct mlib_library	*mlib_open_library(const char *location, int remote);
