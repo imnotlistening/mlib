@@ -173,8 +173,11 @@ int	 mlib_add_path_to_plist(struct mlib_library *lib,
 				struct mlib_playlist *plist, const char *path);
 int	 mlib_add_path(struct mlib_library *lib, const char *plist,
 		       const char *path);
+const char	*mlib_find_path(const struct mlib_playlist *plist,
+				const char *path);
 const char	*mlib_get_path_at(const struct mlib_playlist *plist,
 				  int index);
+int	 mlib_delete_playlist(struct mlib_library *lib, const char *name);
 
 /*
  * Highly specialized functions not for external use.
