@@ -1,10 +1,10 @@
 AUTOMAKE_OPTIONS = foreign
 
-CFLAGS=-Wall -Werror -ggdb
-LDFLAGS=
+CFLAGS  += -Wall -Werror -ggdb
+LDFLAGS +=
 
 # Include our include path in the preprocessor flags.
-AM_CPPFLAGS	= -I../include ${libcurl_CFLAGS}
+AM_CPPFLAGS	= -I@top_srcdir@/include ${libcurl_CFLAGS}
 
 # The MLib shared library; modules can link against this.
 lib_LTLIBRARIES	= libmlib.la

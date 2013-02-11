@@ -10,7 +10,7 @@ AM_PROG_LEX
 
 AC_CONFIG_HEADERS([config.h])
 
-AC_CHECK_HEADERS([sys/mman.h readline/readline.h readline/history.h curl/curl.h])
+AC_CHECK_HEADERS([sys/mman.h])
 
 # Gonna need these.
 AC_TYPE_PID_T
@@ -23,9 +23,15 @@ AC_TYPE_UINT32_T
 PKG_CHECK_MODULES([libcurl], [libcurl >= 7.19.0])
 
 # Standard libraries we need.
+AC_SEARCH_LIBS([dlopen], [dl dld], [], [
+  AC_MSG_ERROR([unable to find the dlopen() function])
+])
 AC_CHECK_LIB(pthread, pthread_create)
-AC_CHECK_LIB(dl, dlopen)
-AC_CHECK_LIB(curl, curl_global_init)
+
+# Readline.
+AC_CHECK_LIB(readline, readline, [], [
+  AC_MSG_ERROR([Could not find readline])
+], -lncurses)
 
 # Gonna build some shared libraries.
 AC_CONFIG_MACRO_DIR([m4])

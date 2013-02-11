@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
-CFLAGS=-Wall -Werror -ggdb
-LDFLAGS=
+CFLAGS  += -Wall -Werror -ggdb
+LDFLAGS +=
 
 # Include our include path in the preprocessor flags.
 AM_CPPFLAGS	= -I@top_srcdir@/include
