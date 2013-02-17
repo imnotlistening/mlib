@@ -49,9 +49,6 @@ int mlib_loop()
 		for (i = 0; i < argc; i++)
 			free(argv[i]);
 		free(argv);
-
-		/* Empty the print queue. */
-		mlib_empty_print_queue();
 	}
 
 	return 0;

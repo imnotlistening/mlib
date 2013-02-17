@@ -177,7 +177,7 @@ int mlib_empty_print_queue()
 		list_del(elem);
 
 		msg = list_entry(elem, struct mlib_msg, queue);
-		printf("%s", msg->text);
+		mlib_printf("%s", msg->text);
 
 		free(msg->text);
 		free(msg);

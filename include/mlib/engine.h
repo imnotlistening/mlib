@@ -28,6 +28,7 @@ struct mlib_playlist;
 /*
  * Capability flags.
  */
+#define MLIB_ENGINE_UNKNOWN	(0)
 #define MLIB_ENGINE_AUDIO	(0x1 << 0)
 #define MLIB_ENGINE_VIDEO	(0x1 << 1)
 
@@ -45,6 +46,8 @@ struct mlib_engine {
 	int		 caps; /* Bitwise OR of capabilities (video/audio). */
 	int		(*play_audio)(const char *uri);
 	int		(*play_video)(const char *uri);
+	int		(*toggle)(void);
+	int		(*stop)(void);
 
 	struct list_head	 list;
 };
@@ -57,6 +60,6 @@ int	 mlib_engine_register(struct mlib_engine *engine);
 int	 mlib_play_media(const struct mlib_library *lib,
 			 const struct mlib_playlist *plist, const char *entry);
 int	 mlib_play(const struct mlib_library *lib,
-		   const struct mlib_playlist *plist);
+		   const struct mlib_playlist *plist, int flags);
 
 #endif

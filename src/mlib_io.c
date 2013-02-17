@@ -162,7 +162,7 @@ error:
 }
 
 /*
- * Read a line from the terminal. Store the number of bytes read in *bytes.
+ * Read a line from the terminal.
  */
 char *__mlib_readbuf_term(char *buffer, size_t max)
 {
@@ -174,6 +174,8 @@ char *__mlib_readbuf_term(char *buffer, size_t max)
 	if (!readline_buff) {
 		while (1) {
 			readline_buff = readline(MLIB_PROMPT);
+			/* Convient place to flush the print queue. */
+			mlib_empty_print_queue();
 			if (!readline_buff)
 				return NULL;
 			buff_size = strlen(readline_buff);
@@ -217,6 +219,8 @@ size_t mlib_readbuf(char *buffer, size_t max)
 
 	if (current_stream != stdin) {
 		stat = fgets(buffer, max, current_stream);
+		/* If we don't do this here, it will never happen. */
+		mlib_empty_print_queue();
 	} else {
 		stat = __mlib_readbuf_term(buffer, max);
 		if (stat && strlen(stat) > 0)

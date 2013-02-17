@@ -76,8 +76,6 @@ int	 mlib_register_builtins();
 int	 mlib_empty_print_queue();
 int	 mlib_printf(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
-int	 mlib_lib_printf(const char *fmt, ...)
-	__attribute__((format(printf, 1, 2)));
 int	 mlib_queue_printf(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
 
