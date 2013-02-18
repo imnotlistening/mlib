@@ -57,10 +57,14 @@ struct mlib_msg {
 };
 
 /*
- * Core functionality.
+ * Utilities and core functions.
  */
 int	 mlib_init();
 void	 mlib_exit(int status);
+char	**mlib_parse_list(const char *list, char delimiter, int *len);
+void	 mlib_free_parsed_list(char **list);
+uint32_t mlib_lib_offset(struct mlib_library *lib, void *addr);
+int	 mlib_filter(const char *file, char *mtypes[]);
 
 /*
  * Command related functions.

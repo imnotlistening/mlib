@@ -108,17 +108,27 @@ const char *mlib_bucket_string_at(const struct mlib_bucket *bucket,
 /*
  * Expand the passed bucket. This expands the bucket by @length bytes.
  */
-int mlib_bucket_expand(struct mlib_library *lib, struct mlib_bucket *bucket,
-		       uint32_t length)
+struct mlib_bucket *mlib_bucket_expand(struct mlib_library *lib,
+				       struct mlib_bucket *bucket,
+				       uint32_t length)
 {
 	uint32_t offset;
+	uint32_t bucket_offset;
 	struct mlib_playlist *plist;
 
 	offset = (((void *)bucket) + MLIB_BUCKET_INDEX_OFFS(bucket)) -
 		((void *)lib->header);
-	if (__mlib_library_insert_space(lib, offset, length))
-		return -1;
+	bucket_offset = mlib_lib_offset(lib, bucket);
 
+	/*
+	 * This can potentially change the address of the mmap()'ed library
+	 * data. Thus we must save the bucket offset across this call so we can
+	 * restore the bucket pointer to what we really want.
+	 */
+	if (__mlib_library_insert_space(lib, offset, length))
+		return NULL;
+
+	bucket = ((void *)lib->header) + bucket_offset;
 	MLIB_BUCKET_SET_LENGTH(bucket, MLIB_BUCKET_LENGTH(bucket) + length);
 	MLIB_BUCKET_SET_INDEX_OFFS(bucket,
 				   MLIB_BUCKET_INDEX_OFFS(bucket) + length);
@@ -127,7 +137,7 @@ int mlib_bucket_expand(struct mlib_library *lib, struct mlib_bucket *bucket,
 	plist = container_of(bucket, struct mlib_playlist, data);
 	MLIB_PLIST_SET_LEN(plist, MLIB_PLIST_LEN(plist) + length);
 
-	return 0;
+	return bucket;
 }
 
 static const struct mlib_bucket *__cmp_bucket;
@@ -192,6 +202,11 @@ const char *mlib_bucket_contains(const struct mlib_bucket *bucket,
 {
 	const char *elem = NULL;
 
+	if (MLIB_BUCKET_MAGIC(bucket) != MLIB_BUCKET_MAGIC_VAL) {
+		mlib_error("Invalid bucket.\n");
+		return NULL;
+	}
+
 	pthread_mutex_lock(&__bucket_cmp_mutex);
 	__cmp_bucket = bucket;
 	elem = bsearch(str, mlib_bucket_indexes(bucket),
@@ -223,7 +238,9 @@ restart:
 	start_of_indexes = ((void *)bucket) + MLIB_BUCKET_INDEX_OFFS(bucket);
 
 	if ((end_of_strs + len) >= (start_of_indexes - 4)) {
-		if (mlib_bucket_expand(lib, bucket, MLIB_BUCKET_GROWTH_RATE))
+		bucket = mlib_bucket_expand(lib, bucket,
+					    MLIB_BUCKET_GROWTH_RATE);
+		if (!bucket)
 			return -1;
 		goto restart;
 	}

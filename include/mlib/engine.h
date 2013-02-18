@@ -38,6 +38,9 @@ struct mlib_playlist;
 #define MLIB_ENGINE_REPEAT	(0x1 << 0)
 #define MLIB_ENGINE_RANDOM	(0x1 << 1)
 
+extern char *mlib_audio_ext[];
+extern char *mlib_video_ext[];
+
 /**
  * Struct for describing an engine for media playing.
  */

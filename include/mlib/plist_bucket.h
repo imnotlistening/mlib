@@ -47,7 +47,7 @@ struct mlib_bucket {
 /*
  * The usual macros for dealing with endianness.
  */
-#define MLIB_BUCKET_MAGIC(bucket)	__mlib_readl(&(bucket)->bucket_magic)
+#define MLIB_BUCKET_MAGIC(bucket)	__mlib_readl(&(bucket)->magic)
 #define MLIB_BUCKET_LENGTH(bucket)	__mlib_readl(&(bucket)->length)
 #define MLIB_BUCKET_INDEX_OFFS(bucket)	__mlib_readl(&(bucket)->index_offs)
 #define MLIB_BUCKET_STR_BYTES(bucket)	__mlib_readl(&(bucket)->str_bytes)

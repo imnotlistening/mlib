@@ -66,22 +66,38 @@ int __mlib_library_expand_fd(int fd, size_t len)
 
 /*
  * Grow the size of a library to the requested length. If the library is
- * already bigger than the passed size an error is returned.
+ * already bigger than the passed size an error is returned. This is a pretty
+ * expensive operation. Try to avoid it if at all possible. If this fails the
+ * pointer @lib is no longer valid.
  */
 int __mlib_library_expand(struct mlib_library *lib, size_t len)
 {
 	int ret;
+	struct mlib_library_header *new_header;
 
 	if (MLIB_LIB_LEN(lib) >= len)
 		return -1;
+
+	munmap(lib->header, MLIB_LIB_LEN(lib));
+
 	ret = __mlib_library_expand_fd(lib->fd, len);
 	if (ret < 0)
 		return ret;
+
+	/* Now remap the file in memory. */
+	new_header = mmap(lib->header, len, PROT_READ|PROT_WRITE,
+			  MAP_SHARED, lib->fd, 0);
+	if (new_header == MAP_FAILED) {
+		mlib_error("Could not remap library.\n");
+		return -1;
+	}
+	lib->header = new_header;
 
 	MLIB_LIB_SET_LEN(lib, len);
 	return 0;
 }
 
+extern void __mlib_print_bucket_info(struct mlib_bucket *bucket);
 /*
  * Insert some blank space into the passed library at @offset. The amount of
  * space to insert is @length bytes.
@@ -89,7 +105,7 @@ int __mlib_library_expand(struct mlib_library *lib, size_t len)
 int __mlib_library_insert_space(struct mlib_library *lib, uint32_t offset,
 				uint32_t length)
 {
-	void *lib_start = lib->header;
+	void *lib_start;
 	uint32_t move_len;
 
 	move_len = MLIB_LIB_LEN(lib) - offset;
@@ -100,8 +116,10 @@ int __mlib_library_insert_space(struct mlib_library *lib, uint32_t offset,
 	}
 
 	/* Now we have space, so push pre-existing data to the end. */
+	lib_start = lib->header;
 	memmove(lib_start + offset + length, lib_start + offset, move_len);
 	memset(lib_start + offset, 0, length);
+
 	return 0;
 }
 
@@ -158,7 +176,7 @@ int mlib_create_library(const char *path, const char *name,
 
 	__mlib_library_expand_fd(fd, 1024);
 
-	header = mmap(NULL, 1024, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0); 
+	header = mmap(NULL, 1024, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	if (!header) {
 		mlib_perror("mmap: %s", path);
 		goto fail;

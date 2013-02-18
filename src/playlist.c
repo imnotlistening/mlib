@@ -114,7 +114,7 @@ const char *mlib_get_path_at(const struct mlib_playlist *plist, int index)
  * If no playlist is found, then returns NULL.
  *
  * @lib		Library to search through.
- * @name	Name of the playlist to look for,
+ * @name	Name of the playlist to look for.
  */
 struct mlib_playlist *mlib_find_playlist(const struct mlib_library *lib,
 					 const char *name)
@@ -208,7 +208,11 @@ int mlib_delete_playlist(struct mlib_library *lib, const char *name)
 int mlib_add_path_to_plist(struct mlib_library *lib,
 			   struct mlib_playlist *plist, const char *path)
 {
-	if  (mlib_bucket_add(lib, &plist->data, path))
+	if (MLIB_PLIST_MAGIC(plist) != MLIB_PLIST_HDR_MAGIC) {
+		mlib_error("Invalid playlist (%p).\n", plist);
+		return -1;
+	}
+	if (mlib_bucket_add(lib, &plist->data, path))
 		return -1;
 
 	MLIB_PLIST_SET_MCOUNT(plist, MLIB_PLIST_MCOUNT(plist) + 1);
@@ -268,6 +272,10 @@ char *__mlib_find_path(const struct mlib_playlist *plist, const char *path)
  */
 const char *mlib_find_path(const struct mlib_playlist *plist, const char *path)
 {
+	if (MLIB_PLIST_MAGIC(plist) != MLIB_PLIST_HDR_MAGIC) {
+		mlib_error("Invalid playlist (%p).\n", plist);
+		return NULL;
+	}
 	return __mlib_find_path(plist, path);
 }
 

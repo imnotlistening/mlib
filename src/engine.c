@@ -51,10 +51,10 @@ struct mlib_thread_args {
  * audio if that fails.
  */
 char *mlib_audio_ext[] = {
-	"mp3", "aac", "ac3", "wav", "wave", "flac", "wma"
+	"mp3", "aac", "ac3", "wav", "wave", "flac", "wma", NULL
 };
 char *mlib_video_ext[] = {
-	"mkv", "mpeg", "avi", "wmv"
+	"mkv", "mpeg", "avi", "wmv", NULL
 };
 
 static LIST_HEAD(mlib_engines);
